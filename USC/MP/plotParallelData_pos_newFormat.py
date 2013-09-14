@@ -1,7 +1,7 @@
 from PyQt4 import QtGui
 import pickle
 import cPickle
-from matplotlib import pyplot as plt
+from guiqwt import pyplot as plt
 import numpy as np
 import numpy.random as rdn
 
@@ -109,26 +109,29 @@ window2.show()
 window3.show()
 app.exec_()
 
-#### CONVERTING TO OPEN GL
-# fig = plt.figure(2, figsize=(24, 15))
-# plt.subplots_adjust(left=0.04, right=0.99, bottom=0.05, top=0.99)
-# plt.subplot2grid((7, 1), (1, 0), rowspan=4, picker=5)
-# #plt.plot(GC_t, GC_pos, '.k', markersize=my_marker_size)
+# #### CONVERTING TO OPEN GL
+# # fig = plt.figure(2, figsize=(24, 15))
+# fig = plt.figure(2)
+# # plt.subplots_adjust(left=0.04, right=0.99, bottom=0.05, top=0.99)
+# # plt.subplot2grid((7, 1), (1, 0), rowspan=4, picker=5)
+# plt.plot(GC_t, GC_pos, '.k')
 # plt.ylabel("GC Cell Septotemporal Position (mm)")
-# plt.xlim((tstart, tstop))
+# # plt.xlim((tstart, tstop))
 #
-# plt.subplot2grid((7, 1), (0, 0))
-# #plt.plot(BC_t, BC_pos, '.m', markersize=my_marker_size)
+# # plt.subplot2grid((7, 1), (0, 0))
+# plt.plot(BC_t, BC_pos, '.m')
 # plt.ylabel("Basket Cells")
-# plt.xlim((tstart, tstop))
+# # plt.xlim((tstart, tstop))
 #
-# plt.subplot2grid((7, 1), (5, 0), rowspan=2)
+# # plt.subplot2grid((7, 1), (5, 0), rowspan=2)
 # plt.ylabel(
 #     "Cell # (MEA = 0 - %i," % (numCells[0] - 1) + " LEA = %i" % numCells[0] + " - %i" % (numCells[0] + numCells[1] - 1))
-# plt.plot(MEA_t, MEA, '.b', markersize=my_marker_size)
-# plt.plot(LEA_t, LEA, '.r', markersize=my_marker_size)
+# plt.plot(MEA_t, MEA, '.b')
+# # plt.plot(MEA_t, MEA, '.b', markersize=my_marker_size)
+# plt.plot(LEA_t, LEA, '.r')
+# # plt.plot(LEA_t, LEA, '.r', markersize=my_marker_size)
 # plt.xlabel("Time (ms)")
-# plt.xlim((tstart, tstop))
-# plt.ylim((0, sum(numCells)))
+# # plt.xlim((tstart, tstop))
+# # plt.ylim((0, sum(numCells)))
 #
 # plt.show()
