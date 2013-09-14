@@ -9,6 +9,7 @@ import numpy.random as rdn
 import sys
 from modules import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
+from windows import MEA_LEA_Window, Position_Window
 
 my_marker_size = 2
 
@@ -32,6 +33,7 @@ f.close()
 f = open("./" + dataDir + "/sharedData.pickle")
 combinedData = []
 combinedData = cPickle.load(f)
+f.close()
 places = combinedData[0]
 MEACenters = combinedData[2]
 LEACenters = combinedData[3]
@@ -51,9 +53,6 @@ GC_xpos = []
 BC_pos = []
 BC_pos_t = []
 BC_xpos = []
-
-f = open("GC.csv", "w")
-f.write("cell,pos_x,pos_y\n")
 
 for ii in spikeData.keys():
     # Medial Entorhinal Area
@@ -95,33 +94,41 @@ print str(len(LEA)) + " LEA spikes,"
 print str(len(GC)) + " Granule cell spikes, and"
 print str(len(BC)) + " Basket cell spikes."
 
-f.close()
-
 MEA_results = np.array([MEA_t, MEA], dtype=np.float32).transpose()
 LEA_results = np.array([LEA_t, LEA], dtype=np.float32).transpose()
+GC_results = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
+BC_results = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
 app = QtGui.QApplication(sys.argv)
-# Plot MEA
-window = MEA_LEA_Window(MEA_results, LEA_results, tstart, tstop, 0, sum(numCells))
-window.show()
+
+window1 = MEA_LEA_Window(MEA_results, LEA_results, view=(tstart, tstop, 0, sum(numCells)))
+window2 = Position_Window(GC_results, view=(tstart, tstop, 0, 10), rgb=(0, 0, 0))
+window3 = Position_Window(BC_results, view=(tstart, tstop, 0, 10), rgb=(1, 0, 1))
+window1.show()
+window2.show()
+window3.show()
 app.exec_()
 
 #### CONVERTING TO OPEN GL
 # fig = plt.figure(2, figsize=(24, 15))
 # plt.subplots_adjust(left=0.04, right=0.99, bottom=0.05, top=0.99)
 # plt.subplot2grid((7, 1), (1, 0), rowspan=4, picker=5)
-# plt.plot(GC_t, GC_pos, '.k', markersize=my_marker_size)
+# #plt.plot(GC_t, GC_pos, '.k', markersize=my_marker_size)
 # plt.ylabel("GC Cell Septotemporal Position (mm)")
 # plt.xlim((tstart, tstop))
 #
 # plt.subplot2grid((7, 1), (0, 0))
-# plt.plot(BC_t, BC_pos, '.m', markersize=my_marker_size, picker=5)
+# #plt.plot(BC_t, BC_pos, '.m', markersize=my_marker_size)
 # plt.ylabel("Basket Cells")
 # plt.xlim((tstart, tstop))
 #
 # plt.subplot2grid((7, 1), (5, 0), rowspan=2)
 # plt.ylabel(
 #     "Cell # (MEA = 0 - %i," % (numCells[0] - 1) + " LEA = %i" % numCells[0] + " - %i" % (numCells[0] + numCells[1] - 1))
+# plt.plot(MEA_t, MEA, '.b', markersize=my_marker_size)
+# plt.plot(LEA_t, LEA, '.r', markersize=my_marker_size)
 # plt.xlabel("Time (ms)")
 # plt.xlim((tstart, tstop))
 # plt.ylim((0, sum(numCells)))
+#
+# plt.show()
