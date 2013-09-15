@@ -2,7 +2,7 @@ import os
 from PyQt4 import QtGui
 import pickle
 import cPickle
-from guiqwt import pyplot as plt
+from matplotlib import pyplot as plt
 import numpy as np
 import numpy.random as rdn
 
@@ -10,7 +10,7 @@ import numpy.random as rdn
 import sys
 from modules import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
-from windows import MEA_LEA_Window, Position_Window, GuiCellPlot, WindowTile
+from windows import GuiCellPlot, WindowTile
 
 my_marker_size = 2
 
@@ -101,11 +101,6 @@ else:
                         BC_pos.append(BCLocs[ii][1])
                         BC_xpos.append(BCLocs[ii][0])
 
-    print str(len(MEA)) + " MEA spikes,"
-    print str(len(LEA)) + " LEA spikes,"
-    print str(len(GC)) + " Granule cell spikes, and"
-    print str(len(BC)) + " Basket cell spikes."
-
     MEA_data = np.array([MEA_t, MEA], dtype=np.float32).transpose()
     LEA_data = np.array([LEA_t, LEA], dtype=np.float32).transpose()
     GC_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
@@ -117,6 +112,11 @@ else:
     np.save(f, GC_data)
     np.save(f, BC_data)
     f.close()
+
+print str(MEA_data.shape[0]) + " MEA spikes,"
+print str(LEA_data.shape[0]) + " LEA spikes,"
+print str(GC_data.shape[0]) + " Granule cell spikes, and"
+print str(BC_data.shape[0]) + " Basket cell spikes."
 
 app = QtGui.QApplication(sys.argv)
 
@@ -133,38 +133,3 @@ bc_tile = WindowTile((bc_set,), (tstart, tstop, 0, 10))
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
 window.show()
 app.exec_()
-
-# window1 = MEA_LEA_Window(MEA_results, LEA_results, view=(tstart, tstop, 0, sum(numCells)))
-# window2 = Position_Window(GC_results, view=(tstart, tstop, 0, 10), rgb=(0, 0, 0))
-# window3 = Position_Window(BC_results, view=(tstart, tstop, 0, 10), rgb=(1, 0, 1))
-# window1.show()
-# window2.show()
-# window3.show()
-# app.exec_()
-
-# #### CONVERTING TO OPEN GL
-# # fig = plt.figure(2, figsize=(24, 15))
-# fig = plt.figure(2)
-# # plt.subplots_adjust(left=0.04, right=0.99, bottom=0.05, top=0.99)
-# # plt.subplot2grid((7, 1), (1, 0), rowspan=4, picker=5)
-# plt.plot(GC_t, GC_pos, '.k')
-# plt.ylabel("GC Cell Septotemporal Position (mm)")
-# # plt.xlim((tstart, tstop))
-#
-# # plt.subplot2grid((7, 1), (0, 0))
-# plt.plot(BC_t, BC_pos, '.m')
-# plt.ylabel("Basket Cells")
-# # plt.xlim((tstart, tstop))
-#
-# # plt.subplot2grid((7, 1), (5, 0), rowspan=2)
-# plt.ylabel(
-#     "Cell # (MEA = 0 - %i," % (numCells[0] - 1) + " LEA = %i" % numCells[0] + " - %i" % (numCells[0] + numCells[1] - 1))
-# plt.plot(MEA_t, MEA, '.b')
-# # plt.plot(MEA_t, MEA, '.b', markersize=my_marker_size)
-# plt.plot(LEA_t, LEA, '.r')
-# # plt.plot(LEA_t, LEA, '.r', markersize=my_marker_size)
-# plt.xlabel("Time (ms)")
-# # plt.xlim((tstart, tstop))
-# # plt.ylim((0, sum(numCells)))
-#
-# plt.show()

@@ -20,11 +20,11 @@ class GuiCellPlot(QtGui.QMainWindow):
         gc_widget = GLPlotWidget(GC_TILE.data_set, GC_TILE.view)
         bc_widget = GLPlotWidget(BC_TILE.data_set, BC_TILE.view)
 
-        v_box = QtGui.QVBoxLayout()
-        v_box.addWidget(bc_widget)
-        v_box.addWidget(gc_widget)
-        #v_box.addStretch(1)
-        v_box.addWidget(mea_lea_widget)
+        v_box = QtGui.QGridLayout()
+        v_box.setSpacing(10)
+        v_box.addWidget(bc_widget, 1, 0)
+        v_box.addWidget(gc_widget, 2, 0, 5, 0)
+        v_box.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
         w = QtGui.QWidget()
         w.setLayout(v_box)
@@ -44,47 +44,3 @@ class WindowTile():
     def __init__(self, data_set, view):
         self.data_set = data_set
         self.view = view
-
-
-# define a QT window with an OpenGL widget inside it
-class MEA_LEA_Window(QtGui.QMainWindow):
-    def __init__(self, MEA_data, LEA_data, view):
-        super(MEA_LEA_Window, self).__init__()
-        # generate random data points
-        # initialize the GL widget
-        mea = CellTypeDataSet(MEA_data, rgb=(0, 0, 1))
-        lea = CellTypeDataSet(LEA_data, rgb=(1, 0, 0))
-        dataSets = (mea, lea)
-        self.plot = GLPlotWidget(dataSets, view)
-        # put the window at the screen position (100, 100)
-        self.setGeometry(100, 100, self.plot.width, self.plot.height)
-
-        self.setWindowTitle('LambdaFunction - guiqwt')
-
-        self.button = QtGui.QPushButton('Load')
-
-        ly = QtGui.QVBoxLayout()
-        ly.addWidget(self.plot)
-        ly.addWidget(self.button)
-
-        w = QtGui.QWidget()
-        w.setLayout(ly)
-
-        self.setCentralWidget(w)
-
-        self.connect(self.button, QtCore.SIGNAL('clicked()'), self.button_Click)
-
-    def button_Click(self):
-        print "Clicked Button"
-
-class Position_Window(QtGui.QMainWindow):
-    def __init__(self, data, view, rgb=(0, 0, 0)):
-        super(Position_Window, self).__init__()
-        # generate random data points
-        # initialize the GL widget
-        set1 = CellTypeDataSet(data, rgb=rgb)
-        dataSets = (set1,)
-        widget = GLPlotWidget(dataSets, view)
-        # put the window at the screen position (100, 100)
-        self.setGeometry(100, 100, widget.width, widget.height)
-        self.setCentralWidget(widget)
