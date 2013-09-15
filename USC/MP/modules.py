@@ -8,7 +8,10 @@ __author__ = 'mavinm'
 class CellTypeDataSet():
     """
     Set's The data type set into this object
-    dataSet must be a tuple (dataSet,)
+
+    dataSet : tuple (dataInformation,) # Must be in the format of numpy array
+    rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
+    xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
     def __init__(self, dataSet, rgb=(1, 1, 1), xyz=(0, 0, 0)):
