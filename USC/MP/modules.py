@@ -1,8 +1,68 @@
 from PyQt4.QtOpenGL import QGLWidget
 import OpenGL.GL as gl
 import OpenGL.arrays.vbo as glvbo
+from enum import Enum
+import math
 
 __author__ = 'mavinm'
+
+
+class Tools(Enum):
+    NONE = 0
+    ZOOM_IN = 1
+
+
+class Callbacks(Enum):
+    NONE = 0
+    RESIZE = 1
+
+
+class ToolQB():
+    """
+    SINGLETON
+    """
+    _instance = None
+
+    def zoom_in(self, QMouseEvent):
+        if self.prev_position is None:
+            self.prev_position = QMouseEvent.pos()
+        else:
+            current_position = QMouseEvent.pos()
+            prev_xy = (self.prev_position.x(), self.prev_position.y())
+            curr_xy = (current_position.x(), current_position.y())
+            dist = math.hypot(curr_xy[0] - prev_xy[0],
+                              curr_xy[1] - prev_xy[1])
+            if dist < 2:
+                print "Treat as a click"
+                callback = Callbacks.NONE
+            else:
+                print "Zoom in"
+                callback = Callbacks.RESIZE
+            self.prev_position = None
+
+            return callback, (
+                min(curr_xy[0], prev_xy[0]), max(curr_xy[0], prev_xy[0]),
+                min(curr_xy[1], prev_xy[1]), max(curr_xy[1], prev_xy[1]))
+
+    options = {
+        Tools.ZOOM_IN: zoom_in,
+    }
+
+    def mouseDown(self, QMouseEvent):
+        self.options[self.tool](self, QMouseEvent)
+
+    def mouseUp(self, QMouseEvent):
+        return self.options[self.tool](self, QMouseEvent)
+
+    def __init__(self):
+        self.tool = Tools.ZOOM_IN
+        self.prev_position = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(ToolQB, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._instance
 
 
 class CellTypeDataSet():
@@ -45,10 +105,19 @@ class GLPlotWidget(QGLWidget):
         super(GLPlotWidget, self).__init__()
 
         self.dataSets = dataSets
+        self.setView(view)
+        self.toolQB = ToolQB()
+
+    def setView(self, view):
         self.xLeft = view[0]
         self.xRight = view[1]
         self.yBot = view[2]
         self.yTop = view[3]
+
+        self.setOrtho()
+
+    def setOrtho(self):
+        gl.glOrtho(self.xLeft, self.xRight, self.yBot, self.yTop, -1, 1)
 
     def initializeGL(self):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
@@ -90,4 +159,14 @@ class GLPlotWidget(QGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        gl.glOrtho(self.xLeft, self.xRight, self.yBot, self.yTop, -1, 1)
+        self.setOrtho()
+
+    def mousePressEvent(self, QMouseEvent):
+        self.toolQB.mouseDown(QMouseEvent)
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        callback = self.toolQB.mouseUp(QMouseEvent)
+        if callback[0] == Callbacks.RESIZE:
+            self.setView(callback[1])
+            self.repaint()
+
