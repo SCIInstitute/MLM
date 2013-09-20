@@ -39,7 +39,7 @@ class GuiQwtPlot(QtGui.QMainWindow):
         self.plot.add_item(self.curveB)
         self.plot.add_item(self.curveC)
 
-    def button_Click( self ):
+    def button_Click(self):
         self.curveA.set_data(range(0, 20, 2), map(lambda _: random(), range(0, 10)))
         self.curveB.set_data(range(0, 20, 2), map(lambda _: random() + random(), range(0, 10)))
         self.curveC.set_data(range(0, 20, 2), map(lambda _: random() + random() + random(), range(0, 10)))
