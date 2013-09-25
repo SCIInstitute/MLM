@@ -22,9 +22,10 @@ class GuiCellPlot(QtGui.QMainWindow):
 
         g_box = QtGui.QGridLayout()
         g_box.setSpacing(10)
+        # TODO - Need to focus on the widget when multiple widgets in place
         g_box.addWidget(bc_widget, 1, 0)
         g_box.addWidget(gc_widget, 2, 0, 5, 0)
-        g_box.addWidget(mea_lea_widget, 7, 0, 2, 0)
+        # g_box.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
         w = QtGui.QWidget()
         w.setLayout(g_box)

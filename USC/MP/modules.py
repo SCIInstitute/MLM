@@ -1,5 +1,6 @@
 from PyQt4.QtOpenGL import QGLWidget
 import OpenGL.GL as gl
+import OpenGL.GLU as glu
 import OpenGL.arrays.vbo as glvbo
 from enum import Enum
 import math
@@ -108,15 +109,31 @@ class GLPlotWidget(QGLWidget):
         self.setView(view)
         self.toolQB = ToolQB()
 
-    def setView(self, view):
-        self.xLeft = view[0]
-        self.xRight = view[1]
-        self.yBot = view[2]
-        self.yTop = view[3]
+    def setView(self, view, projectMouse=False):
+        if projectMouse:
+            _xLeft, _yBot, z = glu.gluUnProject(view[0], self.height - view[3], 0.0)
+            _xRight, _yTop, z = glu.gluUnProject(view[1], self.height - view[2], 0.0)
+
+            self.xLeft = max(self.xLeft, _xLeft)
+            self.xRight = min(self.xRight, _xRight)
+            self.yBot = max(self.yBot, _yBot)
+            self.yTop = min(self.yTop, _yTop)
+        else:
+            self.xLeft = view[0]
+            self.xRight = view[1]
+            self.yBot = view[2]
+            self.yTop = view[3]
+
+        print (self.xLeft, self.xRight, self.yBot, self.yTop)
 
         self.setOrtho()
 
     def setOrtho(self):
+        # paint within the whole window
+        gl.glViewport(0, 0, self.width, self.height)
+        # set orthographic projection (2D only)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
         gl.glOrtho(self.xLeft, self.xRight, self.yBot, self.yTop, -1, 1)
 
     def initializeGL(self):
@@ -153,12 +170,6 @@ class GLPlotWidget(QGLWidget):
         """
         # update the window size
         self.width, self.height = width, height
-        # paint within the whole window
-        gl.glViewport(0, 0, width, height)
-        # set orthographic projection (2D only)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-
         self.setOrtho()
 
     def mousePressEvent(self, QMouseEvent):
@@ -167,6 +178,6 @@ class GLPlotWidget(QGLWidget):
     def mouseReleaseEvent(self, QMouseEvent):
         callback = self.toolQB.mouseUp(QMouseEvent)
         if callback[0] == Callbacks.RESIZE:
-            self.setView(callback[1])
+            self.setView(callback[1], True)
             self.repaint()
 
