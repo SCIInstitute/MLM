@@ -26,8 +26,8 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.grid.setSpacing(10)
         # TODO - Need to focus on the widget when multiple widgets in place
         self.grid.addWidget(bc_widget, 1, 0)
-        #self.grid.addWidget(gc_widget, 2, 0, 5, 0)
-        #self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
+        self.grid.addWidget(gc_widget, 2, 0, 5, 0)
+        self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
         self.resize(self.width, self.height)
         self.setWindowTitle("Cell Plot")

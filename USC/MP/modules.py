@@ -1,3 +1,5 @@
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtGui import QPainter
 from PyQt4.QtOpenGL import QGLWidget
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
@@ -103,7 +105,7 @@ class GLPlotWidget(QGLWidget):
     width, height = 600, 600
 
     def __init__(self, data_sets, view=(0, 1, 0, 1)):
-        super(GLPlotWidget, self).__init__()
+        QGLWidget.__init__(self)
 
         self.x_left = 0
         self.x_right = 0
@@ -111,10 +113,14 @@ class GLPlotWidget(QGLWidget):
         self.y_top = 0
         self.width = 0
         self.height = 0
+        self.mouse_origin = 0
 
         self.data_sets = data_sets
         self.setView(view)
         self.tool_qb = ToolQB()
+        self.rubberband = QtGui.QRubberBand(
+            QtGui.QRubberBand.Rectangle, self)
+        self.setMouseTracking(True)
 
     def setView(self, view, project_mouse=False):
         if project_mouse:
@@ -155,6 +161,8 @@ class GLPlotWidget(QGLWidget):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
+        print "Painting"
+
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -179,12 +187,30 @@ class GLPlotWidget(QGLWidget):
         self.width, self.height = width, height
         self.setOrtho()
 
-    def mousePressEvent(self, mouse):
-        self.tool_qb.mouseDown(mouse)
+    def mousePressEvent(self, event):
+        print "Mouse Down Event"
+        self.mouse_origin = event.pos()
+        self.rubberband.setGeometry(
+            QtCore.QRect(self.mouse_origin, QtCore.QSize()))
+        self.rubberband.show()
 
-    def mouseReleaseEvent(self, mouse):
-        callback = self.tool_qb.mouseUp(mouse)
+        self.tool_qb.mouseDown(event)
+        QtGui.QWidget.mousePressEvent(self, event)
+
+    def mouseMoveEvent(self, event):
+        if self.rubberband.isVisible():
+            self.rubberband.setGeometry(
+                QtCore.QRect(self.mouse_origin, event.pos()).normalized())
+            QtGui.QWidget.mouseMoveEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        print "Mouse Up Event"
+        if self.rubberband.isVisible():
+            self.rubberband.hide()
+        callback = self.tool_qb.mouseUp(event)
         if callback[0] == Callbacks.RESIZE:
             self.setView(callback[1], True)
             self.repaint()
+
+        QtGui.QWidget.mouseReleaseEvent(self, event)
 
