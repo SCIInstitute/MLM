@@ -1,4 +1,5 @@
 from PyQt4 import QtGui
+from PyQt4.QtGui import QWidget
 from modules import GLPlotWidget, CellTypeDataSet
 
 from PyQt4 import QtCore
@@ -15,24 +16,23 @@ class GuiCellPlot(QtGui.QMainWindow):
 
     def __init__(self, MEA_LEA_TILE, GC_TILE, BC_TILE):
         super(GuiCellPlot, self).__init__()
+        self.central = QWidget(self)
 
         mea_lea_widget = GLPlotWidget(MEA_LEA_TILE.data_set, MEA_LEA_TILE.view)
         gc_widget = GLPlotWidget(GC_TILE.data_set, GC_TILE.view)
         bc_widget = GLPlotWidget(BC_TILE.data_set, BC_TILE.view)
 
-        g_box = QtGui.QGridLayout()
-        g_box.setSpacing(10)
+        self.grid = QtGui.QGridLayout(self.central)
+        self.grid.setSpacing(10)
         # TODO - Need to focus on the widget when multiple widgets in place
-        g_box.addWidget(bc_widget, 1, 0)
-        g_box.addWidget(gc_widget, 2, 0, 5, 0)
-        # g_box.addWidget(mea_lea_widget, 7, 0, 2, 0)
-
-        w = QtGui.QWidget()
-        w.setLayout(g_box)
+        self.grid.addWidget(bc_widget, 1, 0)
+        #self.grid.addWidget(gc_widget, 2, 0, 5, 0)
+        #self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
         self.resize(self.width, self.height)
+        self.setWindowTitle("Cell Plot")
 
-        self.setCentralWidget(w)
+        self.setCentralWidget(self.central)
 
 
 class WindowTile():

@@ -24,11 +24,11 @@ class ToolQB():
     """
     _instance = None
 
-    def zoom_in(self, QMouseEvent):
+    def zoom_in(self, mouse):
         if self.prev_position is None:
-            self.prev_position = QMouseEvent.pos()
+            self.prev_position = mouse.pos()
         else:
-            current_position = QMouseEvent.pos()
+            current_position = mouse.pos()
             prev_xy = (self.prev_position.x(), self.prev_position.y())
             curr_xy = (current_position.x(), current_position.y())
             dist = math.hypot(curr_xy[0] - prev_xy[0],
@@ -49,11 +49,11 @@ class ToolQB():
         Tools.ZOOM_IN: zoom_in,
     }
 
-    def mouseDown(self, QMouseEvent):
-        self.options[self.tool](self, QMouseEvent)
+    def mouseDown(self, mouse):
+        self.options[self.tool](self, mouse)
 
-    def mouseUp(self, QMouseEvent):
-        return self.options[self.tool](self, QMouseEvent)
+    def mouseUp(self, mouse):
+        return self.options[self.tool](self, mouse)
 
     def __init__(self):
         self.tool = Tools.ZOOM_IN
@@ -75,10 +75,10 @@ class CellTypeDataSet():
     xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
-    def __init__(self, dataSet, rgb=(1, 1, 1), xyz=(0, 0, 0)):
+    def __init__(self, data_set, rgb=(1, 1, 1), xyz=(0, 0, 0)):
         # create a Vertex Buffer Object with the specified data
-        self.vbo = glvbo.VBO(dataSet)
-        self.count = dataSet.shape[0]
+        self.vbo = glvbo.VBO(data_set)
+        self.count = data_set.shape[0]
         self.rgb = rgb
         self.xyz = xyz
 
@@ -102,29 +102,36 @@ class GLPlotWidget(QGLWidget):
     # default window size
     width, height = 600, 600
 
-    def __init__(self, dataSets, view=(0, 1, 0, 1)):
+    def __init__(self, data_sets, view=(0, 1, 0, 1)):
         super(GLPlotWidget, self).__init__()
 
-        self.dataSets = dataSets
-        self.setView(view)
-        self.toolQB = ToolQB()
+        self.x_left = 0
+        self.x_right = 0
+        self.y_bot = 0
+        self.y_top = 0
+        self.width = 0
+        self.height = 0
 
-    def setView(self, view, projectMouse=False):
-        if projectMouse:
+        self.data_sets = data_sets
+        self.setView(view)
+        self.tool_qb = ToolQB()
+
+    def setView(self, view, project_mouse=False):
+        if project_mouse:
             _xLeft, _yBot, z = glu.gluUnProject(view[0], self.height - view[3], 0.0)
             _xRight, _yTop, z = glu.gluUnProject(view[1], self.height - view[2], 0.0)
 
-            self.xLeft = max(self.xLeft, _xLeft)
-            self.xRight = min(self.xRight, _xRight)
-            self.yBot = max(self.yBot, _yBot)
-            self.yTop = min(self.yTop, _yTop)
+            self.x_left = max(self.x_left, _xLeft)
+            self.x_right = min(self.x_right, _xRight)
+            self.y_bot = max(self.y_bot, _yBot)
+            self.y_top = min(self.y_top, _yTop)
         else:
-            self.xLeft = view[0]
-            self.xRight = view[1]
-            self.yBot = view[2]
-            self.yTop = view[3]
+            self.x_left = view[0]
+            self.x_right = view[1]
+            self.y_bot = view[2]
+            self.y_top = view[3]
 
-        print (self.xLeft, self.xRight, self.yBot, self.yTop)
+        print "(xl,xr,yb,yt) = ", (self.x_left, self.x_right, self.y_bot, self.y_top)
 
         self.setOrtho()
 
@@ -134,7 +141,7 @@ class GLPlotWidget(QGLWidget):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(self.xLeft, self.xRight, self.yBot, self.yTop, -1, 1)
+        gl.glOrtho(self.x_left, self.x_right, self.y_bot, self.y_top, -1, 1)
 
     def initializeGL(self):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
@@ -148,7 +155,7 @@ class GLPlotWidget(QGLWidget):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-        for dSet in self.dataSets:
+        for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
             gl.glPushMatrix()
@@ -172,11 +179,11 @@ class GLPlotWidget(QGLWidget):
         self.width, self.height = width, height
         self.setOrtho()
 
-    def mousePressEvent(self, QMouseEvent):
-        self.toolQB.mouseDown(QMouseEvent)
+    def mousePressEvent(self, mouse):
+        self.tool_qb.mouseDown(mouse)
 
-    def mouseReleaseEvent(self, QMouseEvent):
-        callback = self.toolQB.mouseUp(QMouseEvent)
+    def mouseReleaseEvent(self, mouse):
+        callback = self.tool_qb.mouseUp(mouse)
         if callback[0] == Callbacks.RESIZE:
             self.setView(callback[1], True)
             self.repaint()
