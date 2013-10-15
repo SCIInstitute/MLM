@@ -38,7 +38,7 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.setCentralWidget(self.central)
 
 
-class WindowTile():
+class ViewTile():
     """
     Keeps Track of the data sets along with window information like view size, etc.
 
@@ -49,6 +49,7 @@ class WindowTile():
     def __init__(self, data_set, view):
         self.data_set = data_set
         self.view = view
+
 
 class GLPlotWidget(QGLWidget):
     # default window size
@@ -101,13 +102,17 @@ class GLPlotWidget(QGLWidget):
         gl.glOrtho(self.x_left, self.x_right, self.y_bot, self.y_top, -1, 1)
 
     def initializeGL(self):
-        """Initialize OpenGL, VBOs, upload data on the GPU, etc.
+        """
+        Initialize OpenGL, VBOs, upload data on the GPU, etc.
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
+        # TODO - Place only if the person zoom's in more than 50%
+        gl.glEnable(gl.GL_POINT_SMOOTH)
 
     def paintGL(self):
-        """Paint the scene.
+        """
+        Paint the scene.
         """
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)

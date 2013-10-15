@@ -9,6 +9,11 @@ __author__ = 'mavinm'
 
 class ParseCellData():
     """
+    Parses the dataset given by USC
+
+    num_cells      : A tuple consisting of the sizes as follows (MEA_size, LEA_size, GC_size, BC_size)
+    t_start        : Start time to the spike times
+    t_stop         : End time of the spike times
     use_cache_data : If set to true, ignores parsing the file, instead looks on disk for a cached file binary array
 
     Returns (MEA_data, LEA_data, GC_data, BC_data)

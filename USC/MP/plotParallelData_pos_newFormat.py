@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import sys
 from modules import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
-from view import GuiCellPlot, WindowTile
+from view import GuiCellPlot, ViewTile
 
 my_marker_size = 2
 
@@ -29,9 +29,9 @@ gc_set = CellTypeDataSet(gc_data, rgb=(0, 0, 0))
 bc_set = CellTypeDataSet(bc_data, rgb=(1, 0, 1))
 
 # These are the individual tiles that will have information about the dataset
-mea_lea_tile = WindowTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
-gc_tile = WindowTile((gc_set,), (tstart, tstop, 0, 10))
-bc_tile = WindowTile((bc_set,), (tstart, tstop, 0, 10))
+mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
+gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
+bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
 window.show()
