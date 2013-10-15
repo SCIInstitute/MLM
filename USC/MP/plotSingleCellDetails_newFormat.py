@@ -1,7 +1,7 @@
 import cPickle
 import pickle
 import pylab as plt
-from modules import ToolQB
+from tools import ToolQB
 from myData.simulationParameters import *
 
 

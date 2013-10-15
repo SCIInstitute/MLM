@@ -14,13 +14,13 @@ class GuiCellPlot(QtGui.QMainWindow):
     Plots all of the cells in one graph
     """
 
-    def __init__(self, MEA_LEA_TILE, GC_TILE, BC_TILE):
+    def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
-        mea_lea_widget = GLPlotWidget(MEA_LEA_TILE.data_set, MEA_LEA_TILE.view)
-        gc_widget = GLPlotWidget(GC_TILE.data_set, GC_TILE.view)
-        bc_widget = GLPlotWidget(BC_TILE.data_set, BC_TILE.view)
+        mea_lea_widget = GLPlotWidget(mea_lea_tile.data_set, mea_lea_tile.view)
+        gc_widget = GLPlotWidget(gc_tile.data_set, gc_tile.view)
+        bc_widget = GLPlotWidget(bc_tile.data_set, bc_tile.view)
 
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
