@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import sys
 from modules import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
-from windows import GuiCellPlot, WindowTile
+from view import GuiCellPlot, WindowTile
 
 my_marker_size = 2
 
@@ -13,7 +13,7 @@ numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
 tstart = 0
 tstop = 1500
 
-data = ParseCellData(numCells, tstart, tstop, use_cache_data=False)
+data = ParseCellData(numCells, tstart, tstop, use_cache_data=True)
 mea_data, lea_data, gc_data, bc_data = data.get_data()
 
 print str(mea_data.shape[0]) + " MEA spikes,"
