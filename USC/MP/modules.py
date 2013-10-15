@@ -20,11 +20,18 @@ class Callbacks(Enum):
     RESIZE = 1
 
 
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 class ToolQB():
-    """
-    SINGLETON
-    """
-    _instance = None
+
+    __metaclass__ = Singleton
 
     def zoom_in(self, mouse):
         if self.prev_position is None:
@@ -51,21 +58,15 @@ class ToolQB():
         Tools.ZOOM_IN: zoom_in,
     }
 
-    def mouseDown(self, mouse):
+    def mouse_down(self, mouse):
         self.options[self.tool](self, mouse)
 
-    def mouseUp(self, mouse):
+    def mouse_up(self, mouse):
         return self.options[self.tool](self, mouse)
 
     def __init__(self):
         self.tool = Tools.ZOOM_IN
         self.prev_position = None
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(ToolQB, cls).__new__(
-                cls, *args, **kwargs)
-        return cls._instance
 
 
 class CellTypeDataSet():
@@ -118,6 +119,7 @@ class GLPlotWidget(QGLWidget):
         self.data_sets = data_sets
         self.setView(view)
         self.tool_qb = ToolQB()
+        print "Address 1: " + str(id(self.tool_qb))
         self.rubberband = QtGui.QRubberBand(
             QtGui.QRubberBand.Rectangle, self)
         self.setMouseTracking(True)
@@ -194,7 +196,7 @@ class GLPlotWidget(QGLWidget):
             QtCore.QRect(self.mouse_origin, QtCore.QSize()))
         self.rubberband.show()
 
-        self.tool_qb.mouseDown(event)
+        self.tool_qb.mouse_down(event)
         QtGui.QWidget.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -207,7 +209,7 @@ class GLPlotWidget(QGLWidget):
         print "Mouse Up Event"
         if self.rubberband.isVisible():
             self.rubberband.hide()
-        callback = self.tool_qb.mouseUp(event)
+        callback = self.tool_qb.mouse_up(event)
         if callback[0] == Callbacks.RESIZE:
             self.setView(callback[1], True)
             self.repaint()
