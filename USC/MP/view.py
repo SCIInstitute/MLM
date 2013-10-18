@@ -51,6 +51,54 @@ class ViewTile():
         self.view = view
 
 
+class CustomRubberband():
+    def __init__(self):
+        self.visible = False
+        self.left = 0
+        self.right = 0
+        self.bottom = 0
+        self.top = 0
+
+    def draw(self):
+        gl.glLineWidth(2.5)
+        gl.glColor3f(100, 0, 0)
+        gl.glBegin(gl.GL_LINES)
+        gl.glVertex2f(self.left, self.top)
+        gl.glVertex2f(self.left, self.bottom)
+        gl.glVertex2f(self.left, self.bottom)
+        gl.glVertex2f(self.right, self.bottom)
+        gl.glVertex2f(self.right, self.bottom)
+        gl.glVertex2f(self.right, self.top)
+        gl.glVertex2f(self.right, self.top)
+        gl.glVertex2f(self.left, self.top)
+        gl.glEnd()
+
+    def show(self):
+        self.visible = True
+
+    def hide(self):
+        self.visible = False
+
+    def isVisible(self):
+        return self.visible
+
+    def setGeometry(self, event, height, view):
+        self.left, self.bottom, z = glu.gluUnProject(event.left(), height - event.bottom(), 0.0)
+        self.right, self.top, z = glu.gluUnProject(event.right(), height - event.top(), 0.0)
+
+        if self.left < view[0]:
+            self.left = view[0]
+
+        if self.right > view[1]:
+            self.right = view[1]
+
+        if self.bottom < view[2]:
+            self.bottom = view[2]
+
+        if self.top > view[3]:
+            self.top = view[3]
+
+
 class GLPlotWidget(QGLWidget):
     # default window size
     width, height = 600, 600
@@ -65,13 +113,12 @@ class GLPlotWidget(QGLWidget):
         self.width = 0
         self.height = 0
         self.mouse_origin = 0
+        self.view = view
 
         self.data_sets = data_sets
         self.setView(view)
         self.tool_qb = ToolQB()
-        print "Address: " + str(id(self.tool_qb))
-        self.rubberband = QtGui.QRubberBand(
-            QtGui.QRubberBand.Rectangle, self)
+        self.rubberband = CustomRubberband()
         self.setMouseTracking(True)
 
     def setView(self, view, project_mouse=False):
@@ -89,7 +136,8 @@ class GLPlotWidget(QGLWidget):
             self.y_bot = view[2]
             self.y_top = view[3]
 
-        print "(xl,xr,yb,yt) = ", (self.x_left, self.x_right, self.y_bot, self.y_top)
+
+        self.view = (self.x_left, self.x_right, self.y_bot, self.y_top)
 
         self.setOrtho()
 
@@ -108,7 +156,7 @@ class GLPlotWidget(QGLWidget):
         # background color
         gl.glClearColor(1, 1, 1, 1)
         # TODO - Place only if the person zoom's in more than 50%
-        gl.glEnable(gl.GL_POINT_SMOOTH)
+        #gl.glEnable(gl.GL_POINT_SMOOTH)
 
     def paintGL(self):
         """
@@ -116,8 +164,6 @@ class GLPlotWidget(QGLWidget):
         """
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
-
-        print "Painting"
 
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
@@ -134,6 +180,9 @@ class GLPlotWidget(QGLWidget):
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
 
+        if self.rubberband.isVisible():
+            self.rubberband.draw()
+
         gl.glFlush()
 
     def resizeGL(self, width, height):
@@ -144,29 +193,33 @@ class GLPlotWidget(QGLWidget):
         self.setOrtho()
 
     def mousePressEvent(self, event):
-        print "Mouse Down Event"
-        self.mouse_origin = event.pos()
-        self.rubberband.setGeometry(
-            QtCore.QRect(self.mouse_origin, QtCore.QSize()))
-        self.rubberband.show()
+        if event.button() == QtCore.Qt.LeftButton:
+            print "Mouse Down Event"
+            self.mouse_origin = event.pos()
+            self.rubberband.setGeometry(
+                QtCore.QRect(self.mouse_origin, QtCore.QSize()), self.height, self.view)
+            self.rubberband.show()
 
-        self.tool_qb.mouse_down(event)
-        QtGui.QWidget.mousePressEvent(self, event)
+            self.tool_qb.mouse_down(event)
+        QGLWidget.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
             self.rubberband.setGeometry(
-                QtCore.QRect(self.mouse_origin, event.pos()).normalized())
-            QtGui.QWidget.mouseMoveEvent(self, event)
-
-    def mouseReleaseEvent(self, event):
-        print "Mouse Up Event"
-        if self.rubberband.isVisible():
-            self.rubberband.hide()
-        callback = self.tool_qb.mouse_up(event)
-        if callback[0] == Callbacks.RESIZE:
-            self.setView(callback[1], True)
+                QtCore.QRect(self.mouse_origin, event.pos()).normalized(), self.height, self.view)
             self.repaint()
 
-        QtGui.QWidget.mouseReleaseEvent(self, event)
+        QGLWidget.mouseMoveEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            print "Mouse Up Event"
+            if self.rubberband.isVisible():
+                self.rubberband.hide()
+                callback = self.tool_qb.mouse_up(event)
+                if callback[0] == Callbacks.RESIZE:
+                    self.setView(callback[1], True)
+                    self.repaint()
+
+        QGLWidget.mouseReleaseEvent(self, event)
 
