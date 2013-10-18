@@ -40,7 +40,11 @@ class GuiCellPlot(QtGui.QMainWindow):
 
 class Viewer():
     def __init__(self, *args, **kwargs):
+
         num_args = len(args)
+
+        self.orig_view = None
+
         if num_args == 0:
             self.__initializeView((0, 1, 0, 1))
         elif num_args == 1:
@@ -49,7 +53,6 @@ class Viewer():
             self.__initializeView((args[0], args[1], args[2], args[3]))
         else:
             raise KeyError("You did not meet the Viewer() initialization criteria")
-
 
     def __initializeView(self, view):
         self.set_view(view[0], view[1], view[2], view[3])
@@ -68,9 +71,9 @@ class Viewer():
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
 
-    def unprojectedView(self):
-        _left, _bottom, z = glu.gluUnProject(self.left, self.bottom, 0.0)
-        _right, _top, z = glu.gluUnProject(self.right, self.top, 0.0)
+    def unprojectedView(self, height):
+        _left, _bottom, z = glu.gluUnProject(self.left, height - self.bottom, 0.0)
+        _right, _top, z = glu.gluUnProject(self.right, height - self.top, 0.0)
 
         return _left, _right, _bottom, _top
 
@@ -93,18 +96,20 @@ class CustomRubberband():
         self.visible = False
         self.box = Viewer()
 
-    def draw(self):
+    def draw(self, height):
         gl.glLineWidth(2.5)
         gl.glColor3f(100, 0, 0)
+        left, right, bottom, top = self.box.unprojectedView(height)
+        # Inverts the mouse pointer
         gl.glBegin(gl.GL_LINES)
-        gl.glVertex2f(self.box.left, self.box.top)
-        gl.glVertex2f(self.box.left, self.box.bottom)
-        gl.glVertex2f(self.box.left, self.box.bottom)
-        gl.glVertex2f(self.box.right, self.box.bottom)
-        gl.glVertex2f(self.box.right, self.box.bottom)
-        gl.glVertex2f(self.box.right, self.box.top)
-        gl.glVertex2f(self.box.right, self.box.top)
-        gl.glVertex2f(self.box.left, self.box.top)
+        gl.glVertex2f(left, top)
+        gl.glVertex2f(left, bottom)
+        gl.glVertex2f(left, bottom)
+        gl.glVertex2f(right, bottom)
+        gl.glVertex2f(right, bottom)
+        gl.glVertex2f(right, top)
+        gl.glVertex2f(right, top)
+        gl.glVertex2f(left, top)
         gl.glEnd()
 
     def show(self):
@@ -116,22 +121,10 @@ class CustomRubberband():
     def isVisible(self):
         return self.visible
 
-    def setGeometry(self, event, height, view):
-        self.box.updateView()
-        self.left, self.bottom, z = glu.gluUnProject(event.left(), height - event.bottom(), 0.0)
-        self.right, self.top, z = glu.gluUnProject(event.right(), height - event.top(), 0.0)
+    def setGeometry(self, event):
+        self.box.set_view(event.left(), event.right(), event.bottom(), event.top())
 
-        #if self.left < view[0]:
-        #    self.left = view[0]
-        #
-        #if self.right > view[1]:
-        #    self.right = view[1]
-        #
-        #if self.bottom < view[2]:
-        #    self.bottom = view[2]
-        #
-        #if self.top > view[3]:
-        #    self.top = view[3]
+
 
 
 class GLPlotWidget(QGLWidget):
@@ -145,35 +138,19 @@ class GLPlotWidget(QGLWidget):
         self.height = 0
         self.mouse_origin = 0
         self.view = view
-        self.orig_view = view
 
         self.data_sets = data_sets
-        self.setView(view)
         self.tool_qb = ToolQB()
         self.rubberband = CustomRubberband()
         self.setMouseTracking(True)
 
-    def setView(self, view, unproject_mouse=False):
-        if unproject_mouse:
-            _xLeft, _yBot, z = glu.gluUnProject(view[0], self.height - view[3], 0.0)
-            _xRight, _yTop, z = glu.gluUnProject(view[1], self.height - view[2], 0.0)
-
-            x_left = max(self.view[0], _xLeft)
-            x_right = min(self.view[1], _xRight)
-            y_bot = max(self.view[2], _yBot)
-            y_top = min(self.view[3], _yTop)
-
-            self.view = (x_left, x_right, y_bot, y_top)
-
-        self.setOrtho()
-
-    def setOrtho(self):
+    def setOrtho(self, viewArray):
         # paint within the whole window
         gl.glViewport(0, 0, self.width, self.height)
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(self.view.left, self.view.right, self.view.bottom, self.view.top, -1, 1)
+        gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -.1, .1)
         self.repaint()
 
     def initializeGL(self):
@@ -208,7 +185,7 @@ class GLPlotWidget(QGLWidget):
             gl.glPopMatrix()
 
         if self.rubberband.isVisible():
-            self.rubberband.draw()
+            self.rubberband.draw(self.height)
 
         gl.glFlush()
 
@@ -217,11 +194,11 @@ class GLPlotWidget(QGLWidget):
         """
         # update the window size
         self.width, self.height = width, height
-        self.setOrtho()
+        self.setOrtho(self.view.view())
 
     def resetToOriginalView(self):
-        print "Resetting to original view: " + str(self.orig_view)
-        self.setView(self.orig_view)
+        print "Resetting to original view: " + str(self.view.orig_view)
+        self.setOrtho(self.view.orig_view)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -241,23 +218,22 @@ class GLPlotWidget(QGLWidget):
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
             self.rubberband.setGeometry(
-                QtCore.QRect(self.mouse_origin, event.pos()).normalized(), self.height, self.view)
+                QtCore.QRect(self.mouse_origin, event.pos()).normalized())
             self.repaint()
 
         QGLWidget.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            print "Mouse Up Event"
-            if self.rubberband.isVisible():
-                self.rubberband.hide()
-                callback = self.tool_qb.mouse_up(event)
-                if callback[0] == Callbacks.RESIZE:
-                    self.setView(callback[1], True)
-                    self.repaint()
+            self.mouseReleaseEventLeft(event)
 
         QGLWidget.mouseReleaseEvent(self, event)
 
+    def mouseReleaseEventLeft(self, event):
+        pass
+
+    def mouseReleaseEventRight(self, event):
+        pass
 
 class GLUIWidget(GLPlotWidget):
     def __init__(self, data_sets, view=(0, 1, 0, 1)):
@@ -267,10 +243,19 @@ class GLUIWidget(GLPlotWidget):
         print "Mouse Down Event"
         self.mouse_origin = event.pos()
         self.rubberband.setGeometry(
-            QtCore.QRect(self.mouse_origin, QtCore.QSize()), self.height, self.view)
+            QtCore.QRect(self.mouse_origin, QtCore.QSize()))
         self.rubberband.show()
 
         self.tool_qb.mouse_down(event)
 
     def mousePressEventRight(self, event):
         self.resetToOriginalView()
+
+    def mouseReleaseEventLeft(self, event):
+        print "Mouse Up Event"
+        if self.rubberband.isVisible():
+            self.rubberband.hide()
+            callback = self.tool_qb.mouse_up(event)
+            if callback[0] == Callbacks.RESIZE:
+                self.setOrtho(self.rubberband.box.unprojectedView(self.height))
+                self.repaint()
