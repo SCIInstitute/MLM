@@ -49,7 +49,7 @@ class ParseCellData():
     def load_data(self):
         #dataDir = "MEA6600-LEA4600-GC100000-BASKET0-t10000topographic_no-b_AHP_sngl_10-02-2012neg"
         #dataDir = "{6600.4600.100000.1000}-t1500.recurInh_02.03.13-d"
-        dataDir = "myData"
+        dataDir = "data"
         imageName = "./" + dataDir + "/recurInh_i.png"
         fileName = "./" + dataDir + "/spikeTimes"
 

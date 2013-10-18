@@ -2,7 +2,7 @@ import cPickle
 import pickle
 import pylab as plt
 from tools import ToolQB
-from myData.simulationParameters import *
+from data.simulationParameters import *
 
 
 class plotSingleCellDetails:
@@ -13,7 +13,7 @@ class plotSingleCellDetails:
     mymarkersize = 6
 
     def __init__(self, tstart, tstop):
-        dir = "myData"
+        dir = "data"
         imageName = "./" + dir + "/VoltageTrace_GC.png"
         fileName = "./" + dir + "/spikeTimes"
         cellVoltDataFile = "./" + dir + "/voltageTraces/granuleCells_CPU0.out"
