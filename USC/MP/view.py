@@ -21,9 +21,9 @@ class GuiCellPlot(QtGui.QMainWindow):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
-        mea_lea_widget = GLPlotWidget(mea_lea_tile.data_set, mea_lea_tile.view)
-        gc_widget = GLPlotWidget(gc_tile.data_set, gc_tile.view)
-        bc_widget = GLPlotWidget(bc_tile.data_set, bc_tile.view)
+        mea_lea_widget = GLUIWidget(mea_lea_tile.data_set, mea_lea_tile.view)
+        gc_widget = GLUIWidget(gc_tile.data_set, gc_tile.view)
+        bc_widget = GLUIWidget(bc_tile.data_set, bc_tile.view)
 
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
@@ -114,6 +114,7 @@ class GLPlotWidget(QGLWidget):
         self.height = 0
         self.mouse_origin = 0
         self.view = view
+        self.origView = view
 
         self.data_sets = data_sets
         self.setView(view)
@@ -136,7 +137,6 @@ class GLPlotWidget(QGLWidget):
             self.y_bot = view[2]
             self.y_top = view[3]
 
-
         self.view = (self.x_left, self.x_right, self.y_bot, self.y_top)
 
         self.setOrtho()
@@ -148,6 +148,7 @@ class GLPlotWidget(QGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         gl.glOrtho(self.x_left, self.x_right, self.y_bot, self.y_top, -1, 1)
+        self.repaint()
 
     def initializeGL(self):
         """
@@ -192,15 +193,23 @@ class GLPlotWidget(QGLWidget):
         self.width, self.height = width, height
         self.setOrtho()
 
+    def mousePressEventRight(self, event):
+        pass
+
+    def resetToOriginalView(self):
+        print "Resetting to original view"
+        self.setView(self.origView)
+
+    def mousePressEventLeft(self, event):
+        pass
+
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            print "Mouse Down Event"
-            self.mouse_origin = event.pos()
-            self.rubberband.setGeometry(
-                QtCore.QRect(self.mouse_origin, QtCore.QSize()), self.height, self.view)
-            self.rubberband.show()
+            self.mousePressEventLeft(event)
 
-            self.tool_qb.mouse_down(event)
+        if event.button() == QtCore.Qt.RightButton:
+            self.mousePressEventRight(event)
+
         QGLWidget.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
@@ -223,3 +232,19 @@ class GLPlotWidget(QGLWidget):
 
         QGLWidget.mouseReleaseEvent(self, event)
 
+
+class GLUIWidget(GLPlotWidget):
+    def __init__(self, data_sets, view=(0, 1, 0, 1)):
+        GLPlotWidget.__init__(self, data_sets, view)
+
+    def mousePressEventLeft(self, event):
+        print "Mouse Down Event"
+        self.mouse_origin = event.pos()
+        self.rubberband.setGeometry(
+            QtCore.QRect(self.mouse_origin, QtCore.QSize()), self.height, self.view)
+        self.rubberband.show()
+
+        self.tool_qb.mouse_down(event)
+
+    def mousePressEventRight(self, event):
+        self.resetToOriginalView()

@@ -2,7 +2,7 @@ from PyQt4 import QtGui
 
 # My Parameters
 import sys
-from modules import *
+from models import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
 from view import GuiCellPlot, ViewTile
 
