@@ -55,18 +55,18 @@ class Viewer():
             raise KeyError("You did not meet the Viewer() initialization criteria")
 
     def __initializeView(self, view):
-        self.set_view(view[0], view[1], view[2], view[3])
+        self.set_view((view[0], view[1], view[2], view[3]))
 
         self.orig_view = (view[0], view[1], view[2], view[3])
 
     def view(self):
         return self.left, self.right, self.bottom, self.top
 
-    def set_view(self, left, right, bottom, top):
-        self.left = left
-        self.right = right
-        self.bottom = bottom
-        self.top = top
+    def set_view(self, view):
+        self.left = view[0]
+        self.right = view[1]
+        self.bottom = view[2]
+        self.top = view[3]
 
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
@@ -122,7 +122,7 @@ class CustomRubberband():
         return self.visible
 
     def setGeometry(self, event):
-        self.box.set_view(event.left(), event.right(), event.bottom(), event.top())
+        self.box.set_view((event.left(), event.right(), event.bottom(), event.top()))
 
     def restrictBoundaries(self, width, height):
         print "(" + str(self.box.view()) + "," + str((width, height)) + ")"
@@ -246,7 +246,6 @@ class GLUIWidget(GLPlotWidget):
     def __init__(self, data_sets, view=(0, 1, 0, 1)):
         GLPlotWidget.__init__(self, data_sets, view)
 
-
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
         self.mouse_origin = convertMousePoint2DrawPlane(event.pos(), self.height)
@@ -265,7 +264,8 @@ class GLUIWidget(GLPlotWidget):
             self.rubberband.hide()
             callback = self.tool_qb.mouse_up(event)
             if callback[0] == Callbacks.RESIZE:
-                self.setOrtho(self.rubberband.box.unprojectView())
+                self.view.set_view(self.rubberband.box.unprojectView())
+                self.setOrtho(self.view.view())
                 self.repaint()
 
     def mouseMoveEvent(self, event):
