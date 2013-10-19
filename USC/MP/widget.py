@@ -7,6 +7,7 @@ from shaders import ShaderCreator
 from tools import ToolQB, Callbacks
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
+from ui import UI
 
 __author__ = 'mavinm'
 
@@ -56,7 +57,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
-        self.highlightS = None
+        self.highlight_shader = None
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -75,7 +76,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         gl.glClearColor(1, 1, 1, 1)
         # TODO - Place only if the person zoom's in more than 50%
         #gl.glEnable(gl.GL_POINT_SMOOTH)
-        self.highlightS = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
+        self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
+
 
     def paintGL(self):
         """
@@ -84,7 +86,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-        gl.glUseProgram(self.highlightS)
+        gl.glUseProgram(self.highlight_shader)
+        #gl.gluniform2f()
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -120,39 +123,19 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         print "Resetting to original view: " + str(self.view.orig_view)
         self.setOrtho(self.view.orig_view)
 
-    def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.mousePressEventLeft(event)
+    def closeEvent(self, QCloseEvent):
+        glu.gluDeleteQuadric(self.quadratic)
 
-        if event.button() == QtCore.Qt.RightButton:
-            self.mousePressEventRight(event)
+        gl.glDeleteShader(self.highlight_shader)
 
-        QGLWidget.mousePressEvent(self, event)
-
-    def mousePressEventRight(self, event):
-        pass
-
-    def mousePressEventLeft(self, event):
-        pass
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.mouseReleaseEventLeft(event)
-
-        QGLWidget.mouseReleaseEvent(self, event)
-
-    def mouseReleaseEventLeft(self, event):
-        pass
-
-    def mouseReleaseEventRight(self, event):
-        pass
+        QGLWidget.closeEvent(self, QCloseEvent)
 
 
 def convertMousePoint2DrawPlane(event_pos, height):
     return QtCore.QPoint(event_pos.x(), height - event_pos.y())
 
 
-class GLUIWidget(GLPlotWidget):
+class GLUIWidget(UI, GLPlotWidget):
     def __init__(self, data_sets, view=(0, 1, 0, 1)):
         GLPlotWidget.__init__(self, data_sets, view)
 
