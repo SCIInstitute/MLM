@@ -8,8 +8,6 @@ import OpenGL.GL as gl
 
 __author__ = 'mavinm'
 
-def button_press_event(widget, event):
-    print "Hello"
 
 class GuiCellPlot(QtGui.QMainWindow):
     """

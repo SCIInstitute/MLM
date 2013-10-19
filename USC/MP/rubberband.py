@@ -36,7 +36,6 @@ class RectRubberband():
         self.box.set_view((event.left(), event.right(), event.bottom(), event.top()))
 
     def restrictBoundaries(self, width, height):
-        print "(" + str(self.box.view()) + "," + str((width, height)) + ")"
         if self.box.left < 0:
             self.box.left = 0
         if self.box.right > width:
