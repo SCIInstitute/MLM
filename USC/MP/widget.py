@@ -8,6 +8,8 @@ import OpenGL.GL as gl
 
 __author__ = 'mavinm'
 
+def button_press_event(widget, event):
+    print "Hello"
 
 class GuiCellPlot(QtGui.QMainWindow):
     """
@@ -174,6 +176,7 @@ class GLUIWidget(GLPlotWidget):
         if self.rubberband.isVisible():
             self.rubberband.setGeometry(
                 QtCore.QRect(self.mouse_origin, convertMousePoint2DrawPlane(event.pos(), self.height)).normalized())
-            self.repaint()
+
+        self.repaint()
 
         QGLWidget.mouseMoveEvent(self, event)

@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import sys
 from models import *
 from plotSingleCellDetails_newFormat import plotSingleCellDetails
-from window import GuiCellPlot
+from widget import GuiCellPlot
 from view import ViewTile
 
 my_marker_size = 2
