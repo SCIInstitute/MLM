@@ -58,6 +58,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
         self.highlight_shader = None
+        self.mouse_pos = None
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -77,7 +78,12 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # TODO - Place only if the person zoom's in more than 50%
         #gl.glEnable(gl.GL_POINT_SMOOTH)
         self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
+        self.mouse_pos_handler = gl.glGetUniformLocation(self.highlight_shader, "mouse_pos")
+        self.window_size_handler = gl.glGetUniformLocation(self.highlight_shader, "window_size")
 
+    def mouseMoveEvent(self, event):
+        self.mouse_pos = event.pos()
+        QGLWidget.mouseMoveEvent(self, event)
 
     def paintGL(self):
         """
@@ -87,7 +93,12 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
         gl.glUseProgram(self.highlight_shader)
-        #gl.gluniform2f()
+        if self.mouse_pos is not None:
+            print "Paint"
+            x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+            gl.glUniform2f(self.mouse_pos_handler, x_, y_)
+            gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
+
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -157,6 +168,7 @@ class GLUIWidget(UI, GLPlotWidget):
             self.rubberband.hide()
             callback = self.tool_qb.mouse_up(event)
             if callback[0] == Callbacks.RESIZE:
+                print "Resizing"
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
                 self.repaint()
@@ -168,4 +180,4 @@ class GLUIWidget(UI, GLPlotWidget):
 
         self.repaint()
 
-        QGLWidget.mouseMoveEvent(self, event)
+        GLPlotWidget.mouseMoveEvent(self, event)

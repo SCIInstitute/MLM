@@ -9,8 +9,7 @@ class UI(QGLWidget):
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.mousePressEventLeft(event)
-
-        if event.button() == QtCore.Qt.RightButton:
+        elif event.button() == QtCore.Qt.RightButton:
             self.mousePressEventRight(event)
 
         QGLWidget.mousePressEvent(self, event)
@@ -18,6 +17,8 @@ class UI(QGLWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.mouseReleaseEventLeft(event)
+        elif event.button() == QtCore.Qt.RightButton:
+            self.mouseReleaseEventRight(event)
 
         QGLWidget.mouseReleaseEvent(self, event)
 

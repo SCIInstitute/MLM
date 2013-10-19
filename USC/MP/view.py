@@ -34,6 +34,12 @@ class Viewer():
         self.bottom = view[2]
         self.top = view[3]
 
+    def width(self):
+        return self.right - self.left
+
+    def height(self):
+        return self.top - self.bottom
+
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
 
