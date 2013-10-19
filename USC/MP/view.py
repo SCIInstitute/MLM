@@ -71,9 +71,9 @@ class Viewer():
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
 
-    def unprojectedView(self, height):
-        _left, _bottom, z = glu.gluUnProject(self.left, height - self.bottom, 0.0)
-        _right, _top, z = glu.gluUnProject(self.right, height - self.top, 0.0)
+    def unprojectView(self):
+        _left, _bottom, z = glu.gluUnProject(self.left, self.bottom, 0.0)
+        _right, _top, z = glu.gluUnProject(self.right, self.top, 0.0)
 
         return _left, _right, _bottom, _top
 
@@ -96,10 +96,10 @@ class CustomRubberband():
         self.visible = False
         self.box = Viewer()
 
-    def draw(self, height):
+    def draw(self):
         gl.glLineWidth(2.5)
         gl.glColor3f(100, 0, 0)
-        left, right, bottom, top = self.box.unprojectedView(height)
+        left, right, bottom, top = self.box.unprojectView()
         # Inverts the mouse pointer
         gl.glBegin(gl.GL_LINES)
         gl.glVertex2f(left, top)
@@ -124,7 +124,16 @@ class CustomRubberband():
     def setGeometry(self, event):
         self.box.set_view(event.left(), event.right(), event.bottom(), event.top())
 
-
+    def restrictBoundaries(self, width, height):
+        print "(" + str(self.box.view()) + "," + str((width, height)) + ")"
+        if self.box.left < 0:
+            self.box.left = 0
+        if self.box.right > width:
+            self.box.right = width
+        if self.box.top < 0:
+            self.box.top = 0
+        if self.box.bottom > height:
+            self.box.bottom = height
 
 
 class GLPlotWidget(QGLWidget):
@@ -185,7 +194,8 @@ class GLPlotWidget(QGLWidget):
             gl.glPopMatrix()
 
         if self.rubberband.isVisible():
-            self.rubberband.draw(self.height)
+            self.rubberband.restrictBoundaries(self.width, self.height)
+            self.rubberband.draw()
 
         gl.glFlush()
 
@@ -215,14 +225,6 @@ class GLPlotWidget(QGLWidget):
     def mousePressEventLeft(self, event):
         pass
 
-    def mouseMoveEvent(self, event):
-        if self.rubberband.isVisible():
-            self.rubberband.setGeometry(
-                QtCore.QRect(self.mouse_origin, event.pos()).normalized())
-            self.repaint()
-
-        QGLWidget.mouseMoveEvent(self, event)
-
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.mouseReleaseEventLeft(event)
@@ -235,13 +237,19 @@ class GLPlotWidget(QGLWidget):
     def mouseReleaseEventRight(self, event):
         pass
 
+
+def convertMousePoint2DrawPlane(event_pos, height):
+    return QtCore.QPoint(event_pos.x(), height - event_pos.y())
+
+
 class GLUIWidget(GLPlotWidget):
     def __init__(self, data_sets, view=(0, 1, 0, 1)):
         GLPlotWidget.__init__(self, data_sets, view)
 
+
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
-        self.mouse_origin = event.pos()
+        self.mouse_origin = convertMousePoint2DrawPlane(event.pos(), self.height)
         self.rubberband.setGeometry(
             QtCore.QRect(self.mouse_origin, QtCore.QSize()))
         self.rubberband.show()
@@ -257,5 +265,13 @@ class GLUIWidget(GLPlotWidget):
             self.rubberband.hide()
             callback = self.tool_qb.mouse_up(event)
             if callback[0] == Callbacks.RESIZE:
-                self.setOrtho(self.rubberband.box.unprojectedView(self.height))
+                self.setOrtho(self.rubberband.box.unprojectView())
                 self.repaint()
+
+    def mouseMoveEvent(self, event):
+        if self.rubberband.isVisible():
+            self.rubberband.setGeometry(
+                QtCore.QRect(self.mouse_origin, convertMousePoint2DrawPlane(event.pos(), self.height)).normalized())
+            self.repaint()
+
+        QGLWidget.mouseMoveEvent(self, event)
