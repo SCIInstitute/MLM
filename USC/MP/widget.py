@@ -3,8 +3,10 @@ from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
 from rubberband import RectRubberband
+from shaders import ShaderCreator
 from tools import ToolQB, Callbacks
 import OpenGL.GL as gl
+import OpenGL.GLU as glu
 
 __author__ = 'mavinm'
 
@@ -38,7 +40,7 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.setCentralWidget(self.central)
 
 
-class GLPlotWidget(QGLWidget):
+class GLPlotWidget(QGLWidget, ShaderCreator):
     # default window size
     width, height = 600, 600
 
@@ -54,6 +56,7 @@ class GLPlotWidget(QGLWidget):
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
+        self.highlightS = None
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -72,6 +75,7 @@ class GLPlotWidget(QGLWidget):
         gl.glClearColor(1, 1, 1, 1)
         # TODO - Place only if the person zoom's in more than 50%
         #gl.glEnable(gl.GL_POINT_SMOOTH)
+        self.highlightS = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
 
     def paintGL(self):
         """
@@ -80,6 +84,7 @@ class GLPlotWidget(QGLWidget):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
+        gl.glUseProgram(self.highlightS)
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -94,6 +99,7 @@ class GLPlotWidget(QGLWidget):
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
+        gl.glUseProgram(0)
 
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
@@ -107,6 +113,8 @@ class GLPlotWidget(QGLWidget):
         # update the window size
         self.width, self.height = width, height
         self.setOrtho(self.view.view())
+
+        QGLWidget.resizeGL(self, width, height)
 
     def resetToOriginalView(self):
         print "Resetting to original view: " + str(self.view.orig_view)

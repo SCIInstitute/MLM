@@ -36,4 +36,8 @@ bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
 window.show()
+
+print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
+print "Open GLSL Version: " + gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION)
+
 app.exec_()
