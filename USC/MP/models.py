@@ -122,7 +122,11 @@ class ParseCellData():
         self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
         self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
-        f = file(self.rendered_file, "wb")
+        # Create directory 'tmp' if it does not exist
+        if not os.path.exists('tmp'):
+            os.mkdir('tmp')
+
+        f = file('tmp/' + self.rendered_file, "wb")
         np.save(f, self.mea_data)
         np.save(f, self.lea_data)
         np.save(f, self.gc_data)
@@ -148,12 +152,16 @@ class CellTypeDataSet():
         self.count = data_set.shape[0]
         self.rgb = rgb
         self.xyz = xyz
+        self.data_set = data_set
 
     def setTranslation(self, x, y, z):
         self.xyz = (x, y, z)
 
     def setColor(self, r, g, b):
         self.rgb = (r, g, b)
+
+    def getDataSet(self):
+        return self.data_set
 
     def getTranslation(self):
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])

@@ -61,3 +61,9 @@ class ViewTile():
     def __init__(self, data_set, view):
         self.data_set = data_set
         self.view = Viewer(view)
+
+    def get_Data(self):
+        return self.data_set
+
+    def get_View(self):
+        return self.view

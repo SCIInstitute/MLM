@@ -1,3 +1,4 @@
+from scipy.spatial import kdtree
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore
@@ -24,9 +25,9 @@ class GuiCellPlot(QtGui.QMainWindow):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
-        mea_lea_widget = GLUIWidget(mea_lea_tile.data_set, mea_lea_tile.view)
-        gc_widget = GLUIWidget(gc_tile.data_set, gc_tile.view)
-        bc_widget = GLUIWidget(bc_tile.data_set, bc_tile.view)
+        mea_lea_widget = GLUIWidget(mea_lea_tile)
+        gc_widget = GLUIWidget(gc_tile)
+        bc_widget = GLUIWidget(bc_tile)
 
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
@@ -45,20 +46,24 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
     # default window size
     width, height = 600, 600
 
-    def __init__(self, data_sets, view):
+    def __init__(self, viewer):
         QGLWidget.__init__(self)
 
         self.width = 0
         self.height = 0
         self.mouse_origin = 0
-        self.view = view
+        self.quadric = None
+        self.highlight_shader = None
+        self.mouse_pos = None
 
-        self.data_sets = data_sets
+        self.view = viewer.get_View()
+
+        self.data_sets = viewer.get_Data()
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
-        self.highlight_shader = None
-        self.mouse_pos = None
+        # TODO - Need to take care of all
+        self.kd_tree = kdtree.KDTree(self.data_sets[0].getDataSet())
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -80,6 +85,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
         self.mouse_pos_handler = gl.glGetUniformLocation(self.highlight_shader, "mouse_pos")
         self.window_size_handler = gl.glGetUniformLocation(self.highlight_shader, "window_size")
+        self.quadric = glu.gluNewQuadric()
+        glu.gluQuadricNormals(self.quadric, glu.GLU_SMOOTH)
 
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()
@@ -92,12 +99,20 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-        gl.glUseProgram(self.highlight_shader)
+        #gl.glUseProgram(self.highlight_shader)
+        #if self.mouse_pos is not None:
+        #    x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+        #    gl.glUniform2f(self.mouse_pos_handler, x_, y_)
+        #    gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
+
         if self.mouse_pos is not None:
-            print "Paint"
             x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-            gl.glUniform2f(self.mouse_pos_handler, x_, y_)
-            gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
+            focus_x, focus_y = self.kd_tree.query([x_, y_])
+
+            gl.glPushMatrix()
+            gl.glTranslatef(focus_x, focus_y)
+            glu.gluSphere(self.quadric, 10, 20, 20)
+            gl.glPopMatrix()
 
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
@@ -113,7 +128,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
-        gl.glUseProgram(0)
+        #gl.glUseProgram(0)
 
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
@@ -138,6 +153,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         glu.gluDeleteQuadric(self.quadratic)
 
         gl.glDeleteShader(self.highlight_shader)
+        glu.gluDeleteQuadric(self.quadric)
 
         QGLWidget.closeEvent(self, QCloseEvent)
 
@@ -147,8 +163,8 @@ def convertMousePoint2DrawPlane(event_pos, height):
 
 
 class GLUIWidget(UI, GLPlotWidget):
-    def __init__(self, data_sets, view=(0, 1, 0, 1)):
-        GLPlotWidget.__init__(self, data_sets, view)
+    def __init__(self, viewer):
+        GLPlotWidget.__init__(self, viewer)
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
