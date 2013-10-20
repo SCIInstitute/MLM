@@ -1,4 +1,4 @@
-from scipy.spatial import kdtree
+from kdtree import KDTreeWritable
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore
@@ -63,7 +63,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
         # TODO - Need to take care of all
-        self.kd_tree = kdtree.KDTree(self.data_sets[0].getDataSet())
+        self.kd_tree = KDTreeWritable(viewer.get_Title(), self.data_sets[0].getDataSet(), use_cache_data=True).load()
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -107,10 +107,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         if self.mouse_pos is not None:
             x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-            focus_x, focus_y = self.kd_tree.query([x_, y_])
-
+            d, pt_num = self.kd_tree.query([x_, y_])
+            focus_x, focus_y = self.kd_tree.data[pt_num]
             gl.glPushMatrix()
-            gl.glTranslatef(focus_x, focus_y)
+            gl.glTranslatef(focus_x, focus_y, 0)
+            print "(" + str(focus_x) + "," + str(focus_y) + ")"
             glu.gluSphere(self.quadric, 10, 20, 20)
             gl.glPopMatrix()
 

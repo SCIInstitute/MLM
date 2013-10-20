@@ -58,9 +58,13 @@ class ViewTile():
     view     : (x_left, x_right, y_bottom, y_top) # The window sizes to show the data
     """
 
-    def __init__(self, data_set, view):
+    def __init__(self, title, data_set, view):
         self.data_set = data_set
         self.view = Viewer(view)
+        self.title = title
+
+    def get_Title(self):
+        return self.title
 
     def get_Data(self):
         return self.data_set

@@ -18,7 +18,7 @@ class ParseCellData():
 
     Returns (MEA_data, LEA_data, GC_data, BC_data)
     """
-    rendered_file = "parallelData.bin"
+    rendered_file = "tmp/parallelData.bin"
 
     def __init__(self, num_cells, t_start, t_stop, use_cache_data=False):
 
@@ -123,10 +123,11 @@ class ParseCellData():
         self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
         # Create directory 'tmp' if it does not exist
-        if not os.path.exists('tmp'):
-            os.mkdir('tmp')
+        dir = self.rendered_file.split('/')
+        if not os.path.exists(dir[-2]):
+            os.mkdir(dir[-2])
 
-        f = file('tmp/' + self.rendered_file, "wb")
+        f = file(self.rendered_file, "wb")
         np.save(f, self.mea_data)
         np.save(f, self.lea_data)
         np.save(f, self.gc_data)

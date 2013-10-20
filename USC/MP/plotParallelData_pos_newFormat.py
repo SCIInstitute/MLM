@@ -30,9 +30,9 @@ gc_set = CellTypeDataSet(gc_data, rgb=(0, 0, 0))
 bc_set = CellTypeDataSet(bc_data, rgb=(1, 0, 1))
 
 # These are the individual tiles that will have information about the dataset
-mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
-gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
-bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
+mea_lea_tile = ViewTile("mea_lea", (mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
+gc_tile = ViewTile("gc", (gc_set,), (tstart, tstop, 0, 10))
+bc_tile = ViewTile("bc", (bc_set,), (tstart, tstop, 0, 10))
 
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
 window.show()
