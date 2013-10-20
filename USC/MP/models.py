@@ -144,6 +144,7 @@ class CellTypeDataSet():
 
     dataSet : tuple (dataInformation,) # Must be in the format of numpy array
     rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
+    rgbh    : Same values as the 'rgb', this is the highlight color
     xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
@@ -169,6 +170,9 @@ class CellTypeDataSet():
 
     def getColor(self):
         return gl.glColor(self.rgb[0], self.rgb[1], self.rgb[2])
+
+    def getHighlightColor(self):
+        return gl.glColor(self.rgb[0]+.2, self.rgb[1]+.2, self.rgb[2]+.2)
 
     def getVBO(self):
         return self.vbo

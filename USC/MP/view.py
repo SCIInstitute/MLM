@@ -47,7 +47,8 @@ class Viewer():
         _left, _bottom, z = glu.gluUnProject(self.left, self.bottom, 0.0)
         _right, _top, z = glu.gluUnProject(self.right, self.top, 0.0)
 
-        return _left, _right, _bottom, _top
+        # Not sure why but I had to switch the bottom and top or the vertices flipped
+        return _left, _right, _top, _bottom
 
 
 class ViewTile():

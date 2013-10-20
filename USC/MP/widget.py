@@ -71,7 +71,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -.1, .1)
+        gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
 
     def initializeGL(self):
@@ -80,8 +80,6 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
-        # TODO - Place only if the person zoom's in more than 50%
-        #gl.glEnable(gl.GL_POINT_SMOOTH)
         self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
         self.mouse_pos_handler = gl.glGetUniformLocation(self.highlight_shader, "mouse_pos")
         self.window_size_handler = gl.glGetUniformLocation(self.highlight_shader, "window_size")
@@ -105,16 +103,6 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         #    gl.glUniform2f(self.mouse_pos_handler, x_, y_)
         #    gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
 
-        if self.mouse_pos is not None:
-            x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-            d, pt_num = self.kd_tree.query([x_, y_])
-            focus_x, focus_y = self.kd_tree.data[pt_num]
-            gl.glPushMatrix()
-            gl.glTranslatef(focus_x, focus_y, 0)
-            print "(" + str(focus_x) + "," + str(focus_y) + ")"
-            glu.gluSphere(self.quadric, 10, 20, 20)
-            gl.glPopMatrix()
-
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -129,7 +117,23 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
-        #gl.glUseProgram(0)
+            #gl.glUseProgram(0)
+
+        if self.mouse_pos is not None:
+            gl.glEnable(gl.GL_POINT_SMOOTH)
+            x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+            d, pt_num = self.kd_tree.query([x_, y_])
+            focus_x, focus_y = self.kd_tree.data[pt_num]
+            self.data_sets[0].getHighlightColor()
+            gl.glPushMatrix()
+            gl.glTranslatef(focus_x, focus_y, 0)
+            gl.glPointSize(10)
+            gl.glBegin(gl.GL_POINTS)
+            gl.glVertex2f(0, 0)
+            gl.glEnd()
+            gl.glPointSize(1)
+            gl.glPopMatrix()
+            gl.glDisable(gl.GL_POINT_SMOOTH)
 
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
@@ -184,11 +188,20 @@ class GLUIWidget(UI, GLPlotWidget):
         if self.rubberband.isVisible():
             self.rubberband.hide()
             callback = self.tool_qb.mouse_up(event)
-            if callback[0] == Callbacks.RESIZE:
+            if callback == Callbacks.RESIZE:
                 print "Resizing"
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
                 self.repaint()
+            if callback == Callbacks.CLICK:
+                # TODO - Put visualization constraints and put in its own function to call from here and paintgl
+                x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+                d, pt_num = self.kd_tree.query([x_, y_])
+                focus_x, focus_y = self.kd_tree.data[pt_num]
+                print "Focus Point Number= " + str(pt_num)
+                print "Distance from Mouse= " + str(d)
+                print "Point = (" + str(focus_x) + ", " + str(focus_y) + ")"
+
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
