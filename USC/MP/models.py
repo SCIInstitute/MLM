@@ -18,7 +18,7 @@ class ParseCellData():
 
     Returns (MEA_data, LEA_data, GC_data, BC_data)
     """
-    rendered_file = "parallelData.bin"
+    rendered_file = "tmp/parallelData.bin"
 
     def __init__(self, num_cells, t_start, t_stop, use_cache_data=False):
 
@@ -122,6 +122,11 @@ class ParseCellData():
         self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
         self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
+        # Create directory 'tmp' if it does not exist
+        dir = self.rendered_file.split('/')
+        if not os.path.exists(dir[-2]):
+            os.mkdir(dir[-2])
+
         f = file(self.rendered_file, "wb")
         np.save(f, self.mea_data)
         np.save(f, self.lea_data)
@@ -139,6 +144,7 @@ class CellTypeDataSet():
 
     dataSet : tuple (dataInformation,) # Must be in the format of numpy array
     rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
+    rgbh    : Same values as the 'rgb', this is the highlight color
     xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
@@ -148,6 +154,7 @@ class CellTypeDataSet():
         self.count = data_set.shape[0]
         self.rgb = rgb
         self.xyz = xyz
+        self.data_set = data_set
 
     def setTranslation(self, x, y, z):
         self.xyz = (x, y, z)
@@ -155,11 +162,17 @@ class CellTypeDataSet():
     def setColor(self, r, g, b):
         self.rgb = (r, g, b)
 
+    def getDataSet(self):
+        return self.data_set
+
     def getTranslation(self):
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])
 
     def getColor(self):
         return gl.glColor(self.rgb[0], self.rgb[1], self.rgb[2])
+
+    def getHighlightColor(self):
+        return gl.glColor(self.rgb[0]+.2, self.rgb[1]+.2, self.rgb[2]+.2)
 
     def getVBO(self):
         return self.vbo

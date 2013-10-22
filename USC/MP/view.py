@@ -34,6 +34,12 @@ class Viewer():
         self.bottom = view[2]
         self.top = view[3]
 
+    def width(self):
+        return self.right - self.left
+
+    def height(self):
+        return self.top - self.bottom
+
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
 
@@ -41,7 +47,8 @@ class Viewer():
         _left, _bottom, z = glu.gluUnProject(self.left, self.bottom, 0.0)
         _right, _top, z = glu.gluUnProject(self.right, self.top, 0.0)
 
-        return _left, _right, _bottom, _top
+        # Not sure why but I had to switch the bottom and top or the vertices flipped
+        return _left, _right, _top, _bottom
 
 
 class ViewTile():
@@ -52,6 +59,16 @@ class ViewTile():
     view     : (x_left, x_right, y_bottom, y_top) # The window sizes to show the data
     """
 
-    def __init__(self, data_set, view):
+    def __init__(self, title, data_set, view):
         self.data_set = data_set
         self.view = Viewer(view)
+        self.title = title
+
+    def get_Title(self):
+        return self.title
+
+    def get_Data(self):
+        return self.data_set
+
+    def get_View(self):
+        return self.view

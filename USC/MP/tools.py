@@ -13,6 +13,7 @@ class Tools(Enum):
 class Callbacks(Enum):
     NONE = 0
     RESIZE = 1
+    CLICK = 2
 
 
 class Singleton(type):
@@ -39,15 +40,13 @@ class ToolQB():
                               curr_xy[1] - prev_xy[1])
             if dist < 2:
                 print "Treat as a click"
-                callback = Callbacks.NONE
+                callback = Callbacks.CLICK
             else:
                 print "Zoom in"
                 callback = Callbacks.RESIZE
             self.prev_position = None
 
-            return callback, (
-                min(curr_xy[0], prev_xy[0]), max(curr_xy[0], prev_xy[0]),
-                min(curr_xy[1], prev_xy[1]), max(curr_xy[1], prev_xy[1]))
+            return callback
 
     options = {
         Tools.ZOOM_IN: zoom_in,

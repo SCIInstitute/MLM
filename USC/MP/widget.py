@@ -1,10 +1,14 @@
+from kdtree import KDTreeWritable
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
 from rubberband import RectRubberband
+from shaders import ShaderCreator
 from tools import ToolQB, Callbacks
 import OpenGL.GL as gl
+import OpenGL.GLU as glu
+from ui import UI
 
 __author__ = 'mavinm'
 
@@ -21,9 +25,9 @@ class GuiCellPlot(QtGui.QMainWindow):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
-        mea_lea_widget = GLUIWidget(mea_lea_tile.data_set, mea_lea_tile.view)
-        gc_widget = GLUIWidget(gc_tile.data_set, gc_tile.view)
-        bc_widget = GLUIWidget(bc_tile.data_set, bc_tile.view)
+        mea_lea_widget = GLUIWidget(mea_lea_tile)
+        gc_widget = GLUIWidget(gc_tile)
+        bc_widget = GLUIWidget(bc_tile)
 
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
@@ -38,22 +42,28 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.setCentralWidget(self.central)
 
 
-class GLPlotWidget(QGLWidget):
+class GLPlotWidget(QGLWidget, ShaderCreator):
     # default window size
     width, height = 600, 600
 
-    def __init__(self, data_sets, view):
+    def __init__(self, viewer):
         QGLWidget.__init__(self)
 
         self.width = 0
         self.height = 0
         self.mouse_origin = 0
-        self.view = view
+        self.quadric = None
+        self.highlight_shader = None
+        self.mouse_pos = None
 
-        self.data_sets = data_sets
+        self.view = viewer.get_View()
+
+        self.data_sets = viewer.get_Data()
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
+        # TODO - Need to take care of all
+        self.kd_tree = KDTreeWritable(viewer.get_Title(), self.data_sets[0].getDataSet(), use_cache_data=True).load()
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -61,7 +71,7 @@ class GLPlotWidget(QGLWidget):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -.1, .1)
+        gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
 
     def initializeGL(self):
@@ -70,8 +80,15 @@ class GLPlotWidget(QGLWidget):
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
-        # TODO - Place only if the person zoom's in more than 50%
-        #gl.glEnable(gl.GL_POINT_SMOOTH)
+        self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
+        self.mouse_pos_handler = gl.glGetUniformLocation(self.highlight_shader, "mouse_pos")
+        self.window_size_handler = gl.glGetUniformLocation(self.highlight_shader, "window_size")
+        self.quadric = glu.gluNewQuadric()
+        glu.gluQuadricNormals(self.quadric, glu.GLU_SMOOTH)
+
+    def mouseMoveEvent(self, event):
+        self.mouse_pos = event.pos()
+        QGLWidget.mouseMoveEvent(self, event)
 
     def paintGL(self):
         """
@@ -79,6 +96,12 @@ class GLPlotWidget(QGLWidget):
         """
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+
+        #gl.glUseProgram(self.highlight_shader)
+        #if self.mouse_pos is not None:
+        #    x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+        #    gl.glUniform2f(self.mouse_pos_handler, x_, y_)
+        #    gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
 
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
@@ -94,6 +117,23 @@ class GLPlotWidget(QGLWidget):
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
+            #gl.glUseProgram(0)
+
+        if self.mouse_pos is not None:
+            gl.glEnable(gl.GL_POINT_SMOOTH)
+            x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+            d, pt_num = self.kd_tree.query([x_, y_])
+            focus_x, focus_y = self.kd_tree.data[pt_num]
+            self.data_sets[0].getHighlightColor()
+            gl.glPushMatrix()
+            gl.glTranslatef(focus_x, focus_y, 0)
+            gl.glPointSize(10)
+            gl.glBegin(gl.GL_POINTS)
+            gl.glVertex2f(0, 0)
+            gl.glEnd()
+            gl.glPointSize(1)
+            gl.glPopMatrix()
+            gl.glDisable(gl.GL_POINT_SMOOTH)
 
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
@@ -108,45 +148,28 @@ class GLPlotWidget(QGLWidget):
         self.width, self.height = width, height
         self.setOrtho(self.view.view())
 
+        QGLWidget.resizeGL(self, width, height)
+
     def resetToOriginalView(self):
         print "Resetting to original view: " + str(self.view.orig_view)
         self.setOrtho(self.view.orig_view)
 
-    def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.mousePressEventLeft(event)
+    def closeEvent(self, QCloseEvent):
+        glu.gluDeleteQuadric(self.quadratic)
 
-        if event.button() == QtCore.Qt.RightButton:
-            self.mousePressEventRight(event)
+        gl.glDeleteShader(self.highlight_shader)
+        glu.gluDeleteQuadric(self.quadric)
 
-        QGLWidget.mousePressEvent(self, event)
-
-    def mousePressEventRight(self, event):
-        pass
-
-    def mousePressEventLeft(self, event):
-        pass
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self.mouseReleaseEventLeft(event)
-
-        QGLWidget.mouseReleaseEvent(self, event)
-
-    def mouseReleaseEventLeft(self, event):
-        pass
-
-    def mouseReleaseEventRight(self, event):
-        pass
+        QGLWidget.closeEvent(self, QCloseEvent)
 
 
 def convertMousePoint2DrawPlane(event_pos, height):
     return QtCore.QPoint(event_pos.x(), height - event_pos.y())
 
 
-class GLUIWidget(GLPlotWidget):
-    def __init__(self, data_sets, view=(0, 1, 0, 1)):
-        GLPlotWidget.__init__(self, data_sets, view)
+class GLUIWidget(UI, GLPlotWidget):
+    def __init__(self, viewer):
+        GLPlotWidget.__init__(self, viewer)
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
@@ -165,10 +188,20 @@ class GLUIWidget(GLPlotWidget):
         if self.rubberband.isVisible():
             self.rubberband.hide()
             callback = self.tool_qb.mouse_up(event)
-            if callback[0] == Callbacks.RESIZE:
+            if callback == Callbacks.RESIZE:
+                print "Resizing"
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
                 self.repaint()
+            if callback == Callbacks.CLICK:
+                # TODO - Put visualization constraints and put in its own function to call from here and paintgl
+                x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+                d, pt_num = self.kd_tree.query([x_, y_])
+                focus_x, focus_y = self.kd_tree.data[pt_num]
+                print "Focus Point Number= " + str(pt_num)
+                print "Distance from Mouse= " + str(d)
+                print "Point = (" + str(focus_x) + ", " + str(focus_y) + ")"
+
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
@@ -177,4 +210,4 @@ class GLUIWidget(GLPlotWidget):
 
         self.repaint()
 
-        QGLWidget.mouseMoveEvent(self, event)
+        GLPlotWidget.mouseMoveEvent(self, event)
