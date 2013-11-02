@@ -1,3 +1,4 @@
+from globals import *
 from kdtree import KDTreeWritable
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget
@@ -8,6 +9,7 @@ from shaders import ShaderCreator
 from tools import ToolQB, Callbacks
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
+import numpy as np
 from ui import UI
 
 __author__ = 'mavinm'
@@ -62,8 +64,20 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
-        # TODO - Need to take care of all
-        self.kd_tree = KDTreeWritable(viewer.get_Title(), self.data_sets[0].getDataSet(), use_cache_data=True).load()
+
+        self.kd_tree = []
+
+        for dset in self.data_sets:
+            self.scale_x = viewer.view.width()
+            self.scale_y = viewer.view.height()
+            _data = np.array(dset.getDataSet(), copy=True)
+            _data = _data.transpose()
+            _data[0] /= float(self.scale_x)
+            _data[1] /= float(self.scale_y)
+            _data = _data.transpose()
+            self.kd_tree.append(
+                KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=False).load()
+            )
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -89,6 +103,36 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()
         QGLWidget.mouseMoveEvent(self, event)
+
+    def draw_kd_tree_point(self):
+        gl.glEnable(gl.GL_POINT_SMOOTH)
+        x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
+
+        x_ /= self.scale_x
+        y_ /= self.scale_y
+
+        d = 99999999999
+        pt_num = -1
+        tree_num = -1
+        for i in range(0, len(self.kd_tree)):
+            _d, _pt_num = self.kd_tree[i].query([x_, y_])
+            if _d < d:
+                tree_num = i
+                pt_num = _pt_num
+                d = _d
+        if pt_num == -1 or tree_num == -1:
+            raise KeyError("Unable to get information")
+        focus_x, focus_y = self.kd_tree[tree_num].data[pt_num]
+        self.data_sets[tree_num].getHighlightColor()
+        gl.glPushMatrix()
+        gl.glTranslatef(focus_x*self.scale_x, focus_y*self.scale_y, 0)
+        gl.glPointSize(10)
+        gl.glBegin(gl.GL_POINTS)
+        gl.glVertex2f(0, 0)
+        gl.glEnd()
+        gl.glPointSize(1)
+        gl.glPopMatrix()
+        gl.glDisable(gl.GL_POINT_SMOOTH)
 
     def paintGL(self):
         """
@@ -119,21 +163,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             gl.glPopMatrix()
             #gl.glUseProgram(0)
 
-        if self.mouse_pos is not None:
-            gl.glEnable(gl.GL_POINT_SMOOTH)
-            x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-            d, pt_num = self.kd_tree.query([x_, y_])
-            focus_x, focus_y = self.kd_tree.data[pt_num]
-            self.data_sets[0].getHighlightColor()
-            gl.glPushMatrix()
-            gl.glTranslatef(focus_x, focus_y, 0)
-            gl.glPointSize(10)
-            gl.glBegin(gl.GL_POINTS)
-            gl.glVertex2f(0, 0)
-            gl.glEnd()
-            gl.glPointSize(1)
-            gl.glPopMatrix()
-            gl.glDisable(gl.GL_POINT_SMOOTH)
+        if self.mouse_pos is not None and not self.rubberband.isVisible():
+            self.draw_kd_tree_point()
 
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
@@ -196,8 +227,17 @@ class GLUIWidget(UI, GLPlotWidget):
             if callback == Callbacks.CLICK:
                 # TODO - Put visualization constraints and put in its own function to call from here and paintgl
                 x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-                d, pt_num = self.kd_tree.query([x_, y_])
-                focus_x, focus_y = self.kd_tree.data[pt_num]
+                tree_num = -1
+                d = 99999999
+                pt_num = -1
+                for i in range(0, len(self.kd_tree)):
+                    _d, _pt_num = self.kd_tree[i].query([x_, y_])
+                    if _d < d:
+                        tree_num = i
+                        d = _d
+                        pt_num = _pt_num
+
+                focus_x, focus_y = self.kd_tree[tree_num].data[pt_num]
                 print "Focus Point Number= " + str(pt_num)
                 print "Distance from Mouse= " + str(d)
                 print "Point = (" + str(focus_x) + ", " + str(focus_y) + ")"

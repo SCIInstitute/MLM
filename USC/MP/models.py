@@ -1,7 +1,7 @@
 import OpenGL.GL as gl
 import OpenGL.arrays.vbo as glvbo
 import os
-import cPickle
+import cPickle, pickle
 import numpy as np
 
 __author__ = 'mavinm'
@@ -9,7 +9,7 @@ __author__ = 'mavinm'
 
 class ParseCellData():
     """
-    Parses the dataset given by USC
+    Parses the dataset given by USC using caching option
 
     num_cells      : A tuple consisting of the sizes as follows (MEA_size, LEA_size, GC_size, BC_size)
     t_start        : Start time to the spike times
@@ -18,7 +18,6 @@ class ParseCellData():
 
     Returns (MEA_data, LEA_data, GC_data, BC_data)
     """
-    rendered_file = "tmp/parallelData.bin"
 
     def __init__(self, num_cells, t_start, t_stop, use_cache_data=False):
 
@@ -26,6 +25,7 @@ class ParseCellData():
         self.lea_data = None
         self.gc_data = None
         self.bc_data = None
+
         self.num_cells = num_cells
         self.t_start = t_start
         self.t_stop = t_stop
@@ -35,16 +35,61 @@ class ParseCellData():
         else:
             self.load_data()
 
+        self.complete()
+
+    def complete(self):
+        """ Used after loading data is complete """
+        pass
+
+    def load_data(self):
+        raise NotImplemented("This needs to be implemented and you should call self.save() afterwards for caching")
+
+    def save(self):
+        # Create directory 'tmp' if it does not exist
+        dir = self.rendered_file.split('/')
+        if not os.path.exists(dir[-2]):
+            os.mkdir(dir[-2])
+
+        f = file(self.rendered_file, "wb")
+        # Saves parallel data
+        np.save(f, self.mea_data)
+        np.save(f, self.lea_data)
+        np.save(f, self.gc_data)
+        np.save(f, self.bc_data)
+
+        f.close()
+
     def file_on_disk(self):
         if not os.path.isfile(self.rendered_file):
             return self.load_data()
 
         f = file(self.rendered_file, "rb")
+
         self.mea_data = np.load(f)
         self.lea_data = np.load(f)
         self.gc_data = np.load(f)
         self.bc_data = np.load(f)
+
         f.close()
+
+    def get_data(self):
+        return self.mea_data, self.lea_data, self.gc_data, self.bc_data
+
+    def get_mea_data(self):
+        return self.mea_data
+
+    def get_lea_data(self):
+        return self.lea_data
+
+    def get_gc_data(self):
+        return self.gc_data
+
+    def get_bc_data(self):
+        return self.bc_data
+
+
+class ParseParallelCellData(ParseCellData):
+    rendered_file = "tmp/parallelData.bin"
 
     def load_data(self):
         #dataDir = "MEA6600-LEA4600-GC100000-BASKET0-t10000topographic_no-b_AHP_sngl_10-02-2012neg"
@@ -76,10 +121,8 @@ class ParseCellData():
         BC = []
         BC_t = []
         GC_pos = []
-        GC_pos_t = []
         GC_xpos = []
         BC_pos = []
-        BC_pos_t = []
         BC_xpos = []
 
         for ii in spikeData.keys():
@@ -122,20 +165,7 @@ class ParseCellData():
         self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
         self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
-        # Create directory 'tmp' if it does not exist
-        dir = self.rendered_file.split('/')
-        if not os.path.exists(dir[-2]):
-            os.mkdir(dir[-2])
-
-        f = file(self.rendered_file, "wb")
-        np.save(f, self.mea_data)
-        np.save(f, self.lea_data)
-        np.save(f, self.gc_data)
-        np.save(f, self.bc_data)
-        f.close()
-
-    def get_data(self):
-        return self.mea_data, self.lea_data, self.gc_data, self.bc_data
+        self.save()
 
 
 class CellTypeDataSet():
@@ -148,16 +178,20 @@ class CellTypeDataSet():
     xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
-    def __init__(self, data_set, rgb=(1, 1, 1), xyz=(0, 0, 0)):
+    def __init__(self, title, data_set, rgb=(1, 1, 1), xyz=(0, 0, 0)):
         # create a Vertex Buffer Object with the specified data
         self.vbo = glvbo.VBO(data_set)
         self.count = data_set.shape[0]
         self.rgb = rgb
         self.xyz = xyz
         self.data_set = data_set
+        self.title = title
 
     def setTranslation(self, x, y, z):
         self.xyz = (x, y, z)
+
+    def getTitle(self):
+        return self.title
 
     def setColor(self, r, g, b):
         self.rgb = (r, g, b)
@@ -172,7 +206,7 @@ class CellTypeDataSet():
         return gl.glColor(self.rgb[0], self.rgb[1], self.rgb[2])
 
     def getHighlightColor(self):
-        return gl.glColor(self.rgb[0]+.2, self.rgb[1]+.2, self.rgb[2]+.2)
+        return gl.glColor(self.rgb[0] + .2, self.rgb[1] + .2, self.rgb[2] + .2)
 
     def getVBO(self):
         return self.vbo
