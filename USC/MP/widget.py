@@ -76,7 +76,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             _data[1] /= float(self.scale_y)
             _data = _data.transpose()
             self.kd_tree.append(
-                KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=False).load()
+                KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=USE_CACHING).load()
             )
 
     def setOrtho(self, viewArray):
