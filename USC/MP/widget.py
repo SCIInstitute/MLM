@@ -104,8 +104,12 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.mouse_pos = event.pos()
         QGLWidget.mouseMoveEvent(self, event)
 
-    def draw_kd_tree_point(self):
-        gl.glEnable(gl.GL_POINT_SMOOTH)
+    """
+    Looks at mouse position and cacluates data position of data point closest to cursor
+
+    Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
+    """
+    def find_data_pos(self):
         x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
 
         x_ /= self.scale_x
@@ -123,9 +127,16 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         if pt_num == -1 or tree_num == -1:
             raise KeyError("Unable to get information")
         focus_x, focus_y = self.kd_tree[tree_num].data[pt_num]
+        return tree_num, pt_num, d, focus_x * self.scale_x, focus_y * self.scale_y
+
+    def draw_kd_tree_point(self):
+        gl.glEnable(gl.GL_POINT_SMOOTH)
+
+        tree_num, pt_num, distance, x, y = self.find_data_pos()
+
         self.data_sets[tree_num].getHighlightColor()
         gl.glPushMatrix()
-        gl.glTranslatef(focus_x*self.scale_x, focus_y*self.scale_y, 0)
+        gl.glTranslatef(x, y, 0)
         gl.glPointSize(10)
         gl.glBegin(gl.GL_POINTS)
         gl.glVertex2f(0, 0)
@@ -225,22 +236,10 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.setOrtho(self.view.view())
                 self.repaint()
             if callback == Callbacks.CLICK:
-                # TODO - Put visualization constraints and put in its own function to call from here and paintgl
-                x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-                tree_num = -1
-                d = 99999999
-                pt_num = -1
-                for i in range(0, len(self.kd_tree)):
-                    _d, _pt_num = self.kd_tree[i].query([x_, y_])
-                    if _d < d:
-                        tree_num = i
-                        d = _d
-                        pt_num = _pt_num
-
-                focus_x, focus_y = self.kd_tree[tree_num].data[pt_num]
+                tree_num, pt_num, distance, x, y = self.find_data_pos()
                 print "Focus Point Number= " + str(pt_num)
-                print "Distance from Mouse= " + str(d)
-                print "Point = (" + str(focus_x) + ", " + str(focus_y) + ")"
+                print "Distance from Mouse= " + str(distance)
+                print "Point = (" + str(x) + ", " + str(y) + ")"
 
 
     def mouseMoveEvent(self, event):
