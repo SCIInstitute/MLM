@@ -67,6 +67,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         self.kd_tree = []
 
+        self.graphicsProxyWidget()
+
         for dset in self.data_sets:
             self.scale_x = viewer.view.width()
             self.scale_y = viewer.view.height()
@@ -78,6 +80,13 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             self.kd_tree.append(
                 KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=USE_CACHING).load()
             )
+
+    def event(self, QEvent):
+        if QEvent.type() == QtCore.QEvent.Leave:
+            self.mouse_pos = None
+            self.repaint()
+
+        return QGLWidget.event(self, QEvent)
 
     def setOrtho(self, viewArray):
         # paint within the whole window
@@ -109,6 +118,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
     Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
     """
+
     def find_data_pos(self):
         x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
 
