@@ -4,7 +4,6 @@ import pylab as plt
 from tools import ToolQB
 from data.simulationParameters import *
 
-
 class plotSingleCellDetails:
     """
     Plots the single cell from the rasterized layout and shows all driver cells

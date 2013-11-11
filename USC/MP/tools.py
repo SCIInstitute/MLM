@@ -3,8 +3,6 @@ import math
 
 __author__ = 'mavinm'
 
-
-
 class Tools(Enum):
     NONE = 0
     ZOOM_IN = 1

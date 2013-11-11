@@ -98,12 +98,12 @@ class ParseParallelCellData(ParseCellData):
         imageName = "./" + dataDir + "/recurInh_i.png"
         fileName = "./" + dataDir + "/spikeTimes"
 
-        f = open(fileName, 'r')
+        f = open(fileName, 'rb') # using 'rb' for windows
         spikeData = cPickle.load(f)
         f.close()
 
         # Load in locations of the cells
-        f = open("./" + dataDir + "/sharedData.pickle")
+        f = open("./" + dataDir + "/sharedData.pickle", 'rb')  # using 'rb' for windows
         combinedData = []
         combinedData = cPickle.load(f)
         f.close()
