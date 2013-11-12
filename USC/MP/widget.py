@@ -38,6 +38,7 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.grid.addWidget(gc_widget, 2, 0, 5, 0)
         self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
+
         self.resize(self.width, self.height)
         self.setWindowTitle("Cell Plot")
 
@@ -114,7 +115,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         QGLWidget.mouseMoveEvent(self, event)
 
     """
-    Looks at mouse position and cacluates data position of data point closest to cursor
+    Looks at mouse position and calculates data position of data point closest to cursor
 
     Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
     """

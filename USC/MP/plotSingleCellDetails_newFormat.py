@@ -17,7 +17,7 @@ class plotSingleCellDetails:
         fileName = "./" + dir + "/spikeTimes"
         cellVoltDataFile = "./" + dir + "/voltageTraces/granuleCells_CPU0.out"
 
-        f = open(fileName, 'r')
+        f = open(fileName, 'rb')
         spikeData = cPickle.load(f)
         f.close()
 

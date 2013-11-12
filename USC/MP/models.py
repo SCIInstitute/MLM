@@ -98,7 +98,7 @@ class ParseParallelCellData(ParseCellData):
         imageName = "./" + dataDir + "/recurInh_i.png"
         fileName = "./" + dataDir + "/spikeTimes"
 
-        f = open(fileName, 'rb') # using 'rb' for windows
+        f = open(fileName, 'rb')  # using 'rb' for windows
         spikeData = cPickle.load(f)
         f.close()
 
@@ -170,7 +170,7 @@ class ParseParallelCellData(ParseCellData):
 
 class CellTypeDataSet():
     """
-    Set's The data type set into this object
+    Sets The data type set into this object
 
     dataSet : tuple (dataInformation,) # Must be in the format of numpy array
     rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
