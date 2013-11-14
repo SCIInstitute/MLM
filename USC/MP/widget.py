@@ -17,7 +17,7 @@ __author__ = 'mavinm'
 
 class GuiCellPlot(QtGui.QMainWindow):
     """
-    Plots all of the cells in one graph
+    Singleton: plots all of the cells in one graph
     """
 
     width = 800
@@ -27,6 +27,7 @@ class GuiCellPlot(QtGui.QMainWindow):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
+        # all three plots as widgets. We want these as separate blocks
         mea_lea_widget = GLUIWidget(mea_lea_tile)
         gc_widget = GLUIWidget(gc_tile)
         bc_widget = GLUIWidget(bc_tile)
@@ -34,13 +35,14 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
 
+        # add all the plot widgets to the layout
         self.grid.addWidget(bc_widget, 1, 0)
         self.grid.addWidget(gc_widget, 2, 0, 5, 0)
         self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
 
         self.resize(self.width, self.height)
-        self.setWindowTitle("Cell Plot")
+        self.setWindowTitle("ParaCELLsys")
 
         self.setCentralWidget(self.central)
 
@@ -114,13 +116,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.mouse_pos = event.pos()
         QGLWidget.mouseMoveEvent(self, event)
 
-    """
-    Looks at mouse position and calculates data position of data point closest to cursor
-
-    Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
-    """
-
     def find_data_pos(self):
+        """
+        Looks at mouse position and calculates data position of data point closest to cursor
+        Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
+        """
         x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
 
         x_ /= self.scale_x
@@ -221,6 +221,9 @@ def convertMousePoint2DrawPlane(event_pos, height):
 
 
 class GLUIWidget(UI, GLPlotWidget):
+    """
+    Widget class for the three cell plots.
+    """
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
 
