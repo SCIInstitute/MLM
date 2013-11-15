@@ -12,7 +12,7 @@ import OpenGL.GLU as glu
 import numpy as np
 from ui import UI
 
-__author__ = 'mavinm'
+__author__ = ('Mavin Martin', 'Ariel', 'Weiyu Liu')
 
 
 class GuiCellPlot(QtGui.QMainWindow):
