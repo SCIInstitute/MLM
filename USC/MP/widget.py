@@ -17,17 +17,20 @@ __author__ = 'mavinm'
 
 class GuiCellPlot(QtGui.QMainWindow):
     """
-    Singleton: plots all of the cells in one graph
+    Singleton: plots all of the cells in one graph and is called in main.
     """
 
-    width = 800
-    height = 500
+    # width = 800
+    # height = 500
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
-        # all three plots as widgets. We want these as separate blocks
+        self.width = 800
+        self.height = 600
+
+        # all three plots as widgets. We want these as separate blocks so we can have axis and things
         mea_lea_widget = GLUIWidget(mea_lea_tile)
         gc_widget = GLUIWidget(gc_tile)
         bc_widget = GLUIWidget(bc_tile)
@@ -39,7 +42,6 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.grid.addWidget(bc_widget, 1, 0)
         self.grid.addWidget(gc_widget, 2, 0, 5, 0)
         self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
-
 
         self.resize(self.width, self.height)
         self.setWindowTitle("ParaCELLsys")
@@ -222,10 +224,11 @@ def convertMousePoint2DrawPlane(event_pos, height):
 
 class GLUIWidget(UI, GLPlotWidget):
     """
-    Widget class for the three cell plots.
+    Widget class for the three cell plots. Called in GuiCellPlot. Inherits from GLPlotWidget
     """
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
+
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
@@ -254,7 +257,6 @@ class GLUIWidget(UI, GLPlotWidget):
                 print "Focus Point Number= " + str(pt_num)
                 print "Distance from Mouse= " + str(distance)
                 print "Point = (" + str(x) + ", " + str(y) + ")"
-
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
