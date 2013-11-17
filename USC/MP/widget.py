@@ -20,9 +20,6 @@ class GuiCellPlot(QtGui.QMainWindow):
     Singleton: plots all of the cells in one graph and is called in main.
     """
 
-    # width = 800
-    # height = 500
-
     def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
