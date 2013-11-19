@@ -94,13 +94,19 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
+        self.prevView = (viewArray[0], viewArray[1], viewArray[2], viewArray[3])
         gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
 
     def scaleOrtho(self, delta):
-        leftTop = self.view.leftTop()
         mouse_pos = self.tool_qb.get_scale_anchor()
-        print (leftTop[0] - mouse_pos[0], leftTop[1] - mouse_pos[1])
+        scale = 1 - delta
+        # Normalizes the vector, scales it, then puts it back into world coordinates
+        l = (self.view.left - mouse_pos[0]) * scale + mouse_pos[0]
+        r = (self.view.right - mouse_pos[0]) * scale + mouse_pos[0]
+        t = (self.view.top - mouse_pos[1]) * scale + mouse_pos[1]
+        b = (self.view.bottom - mouse_pos[1]) * scale + mouse_pos[1]
+        self.setOrtho((l, r, b, t))
 
     def initializeGL(self):
         """
@@ -210,6 +216,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
     def resetToOriginalView(self):
         print "Resetting to original view: " + str(self.view.orig_view)
         self.setOrtho(self.view.orig_view)
+        self.view.set_view(self.view.orig_view)
 
     def closeEvent(self, QCloseEvent):
         glu.gluDeleteQuadric(self.quadratic)
@@ -259,6 +266,8 @@ class GLUIWidget(UI, GLPlotWidget):
         callback = self.tool_qb.mouse_up(event, Tools.SCALING)
         if callback == Callbacks.CLICK:
             self.resetToOriginalView()
+        else:
+            self.view.set_view(self.prevView)
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
@@ -267,7 +276,7 @@ class GLUIWidget(UI, GLPlotWidget):
 
         if self.tool_qb.scaling_in_effect():
             distance = self.tool_qb.mouse_move(event, Tools.SCALING)
-            delta = distance/float(self.width)
+            delta = distance / float(self.width)
             self.scaleOrtho(delta)
 
         self.repaint()

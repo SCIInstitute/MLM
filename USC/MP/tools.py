@@ -75,6 +75,7 @@ class ToolQB():
                 print "Zoom in"
                 callback = Callbacks.RESIZE
             self.prev_position_scale = None
+            self.anchor_position_scale = None
 
             return callback
 
