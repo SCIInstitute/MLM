@@ -48,7 +48,7 @@ class ToolQB():
 
             return callback
 
-    def scale(self, mouse, mouse_release):
+    def scale(self, mouse, mouse_release, window_height=None):
         """
         Scales the window according to movement
         mouse - Mouse Event passed in
@@ -56,7 +56,7 @@ class ToolQB():
         """
         if self.prev_position_scale is None:
             self.prev_position_scale = mouse.pos()
-            x, y, z = glu.gluUnProject(mouse.pos().x(), mouse.pos().y(), 0.0)
+            x, y, z = glu.gluUnProject(mouse.pos().x(), window_height - mouse.pos().y(), 0.0)
             self.anchor_position_scale = x, y
         elif not mouse_release:
             current_position = mouse.pos()
@@ -79,11 +79,11 @@ class ToolQB():
 
             return callback
 
-    def mouse_down(self, mouse, tool):
+    def mouse_down(self, mouse, tool, window_height=None):
         if tool == Tools.ZOOM_IN:
             self.zoom_in(mouse)
         elif tool == Tools.SCALING:
-            self.scale(mouse, False)
+            self.scale(mouse, False, window_height)
 
     def mouse_up(self, mouse, tool):
         if tool == Tools.ZOOM_IN:

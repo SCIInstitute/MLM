@@ -1,7 +1,7 @@
 from globals import *
 from kdtree import KDTreeWritable
 from PyQt4 import QtGui
-from PyQt4.QtGui import QWidget
+from PyQt4.QtGui import QWidget, QMessageBox
 from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
 from rubberband import RectRubberband
@@ -94,7 +94,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        self.prevView = (viewArray[0], viewArray[1], viewArray[2], viewArray[3])
+        if (viewArray[0] == viewArray[1]) or (viewArray[2] == viewArray[3]):
+            QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
+            viewArray = self.prevView
+        else:
+            self.prevView = [viewArray[0], viewArray[1], viewArray[2], viewArray[3]]
         gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
 
@@ -106,6 +110,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         r = (self.view.right - mouse_pos[0]) * scale + mouse_pos[0]
         t = (self.view.top - mouse_pos[1]) * scale + mouse_pos[1]
         b = (self.view.bottom - mouse_pos[1]) * scale + mouse_pos[1]
+
         self.setOrtho((l, r, b, t))
 
     def initializeGL(self):
@@ -245,7 +250,7 @@ class GLUIWidget(UI, GLPlotWidget):
         self.tool_qb.mouse_down(event, Tools.ZOOM_IN)
 
     def mousePressEventRight(self, event):
-        self.tool_qb.mouse_down(event, Tools.SCALING)
+        self.tool_qb.mouse_down(event, Tools.SCALING, self.height)
 
     def mouseReleaseEventLeft(self, event):
         self.rubberband.hide()
@@ -255,6 +260,9 @@ class GLUIWidget(UI, GLPlotWidget):
             if self.rubberband.box.dataDistance() > .1:
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
+            else:
+                QMessageBox.about(self, "ERROR", "Your view window is too small to compute, reloading original view.")
+                self.resetToOriginalView()
             self.repaint()
         if callback == Callbacks.CLICK:
             tree_num, pt_num, distance, x, y = self.find_data_pos()
@@ -267,6 +275,15 @@ class GLUIWidget(UI, GLPlotWidget):
         if callback == Callbacks.CLICK:
             self.resetToOriginalView()
         else:
+            # See's if the view window is larger than the data window
+            if self.view.orig_view[0] > self.prevView[0]:
+                self.prevView[0] = self.view.orig_view[0]
+            if self.view.orig_view[1] > self.prevView[1]:
+                self.prevView[1] = self.view.orig_view[1]
+            if self.view.orig_view[2] > self.prevView[2]:
+                self.prevView[2] = self.view.orig_view[2]
+            if self.view.orig_view[3] > self.prevView[3]:
+                self.prevView[3] = self.view.orig_view[3]
             self.view.set_view(self.prevView)
 
     def mouseMoveEvent(self, event):
