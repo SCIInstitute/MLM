@@ -6,7 +6,7 @@ from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
 from rubberband import RectRubberband
 from shaders import ShaderCreator
-from tools import ToolQB, Callbacks
+from tools import ToolQB, Callbacks, Tools
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import numpy as np
@@ -96,6 +96,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         gl.glLoadIdentity()
         gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
+
+    def scaleOrtho(self, delta):
+        leftTop = self.view.leftTop()
+        mouse_pos = self.tool_qb.get_scale_anchor()
+        print (leftTop[0] - mouse_pos[0], leftTop[1] - mouse_pos[1])
 
     def initializeGL(self):
         """
@@ -230,33 +235,42 @@ class GLUIWidget(UI, GLPlotWidget):
             QtCore.QRect(self.mouse_origin, QtCore.QSize()))
         self.rubberband.show()
 
-        self.tool_qb.mouse_down(event)
+        self.tool_qb.mouse_down(event, Tools.ZOOM_IN)
 
     def mousePressEventRight(self, event):
-        self.resetToOriginalView()
+        self.tool_qb.mouse_down(event, Tools.SCALING)
 
     def mouseReleaseEventLeft(self, event):
-        print "Mouse Up Event"
-        if self.rubberband.isVisible():
-            self.rubberband.hide()
-            callback = self.tool_qb.mouse_up(event)
-            if callback == Callbacks.RESIZE:
-                print "Resizing"
+        self.rubberband.hide()
+        callback = self.tool_qb.mouse_up(event, Tools.ZOOM_IN)
+        if callback == Callbacks.RESIZE:
+            print "Resizing"
+            if self.rubberband.box.dataDistance() > .1:
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
-                self.repaint()
-            if callback == Callbacks.CLICK:
-                tree_num, pt_num, distance, x, y = self.find_data_pos()
-                print "Focus Point Number= " + str(pt_num)
-                print "Distance from Mouse= " + str(distance)
-                print "Point = (" + str(x) + ", " + str(y) + ")"
+            self.repaint()
+        if callback == Callbacks.CLICK:
+            tree_num, pt_num, distance, x, y = self.find_data_pos()
+            print "Focus Point Number= " + str(pt_num)
+            print "Distance from Mouse= " + str(distance)
+            print "Point = (" + str(x) + ", " + str(y) + ")"
 
+    def mouseReleaseEventRight(self, event):
+        callback = self.tool_qb.mouse_up(event, Tools.SCALING)
+        if callback == Callbacks.CLICK:
+            self.resetToOriginalView()
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
             self.rubberband.setGeometry(
                 QtCore.QRect(self.mouse_origin, convertMousePoint2DrawPlane(event.pos(), self.height)).normalized())
 
+        if self.tool_qb.scaling_in_effect():
+            distance = self.tool_qb.mouse_move(event, Tools.SCALING)
+            delta = distance/float(self.width)
+            self.scaleOrtho(delta)
+
         self.repaint()
 
         GLPlotWidget.mouseMoveEvent(self, event)
+

@@ -1,4 +1,5 @@
 import OpenGL.GLU as glu
+import math
 
 
 __author__ = 'mavinm'
@@ -28,6 +29,18 @@ class Viewer():
     def view(self):
         return self.left, self.right, self.bottom, self.top
 
+    def leftTop(self):
+        return self.left, self.top
+
+    def rightTop(self):
+        return self.right, self.top
+
+    def leftBottom(self):
+        return self.left, self.bottom
+
+    def rightBottom(self):
+        return self.right, self.bottom
+
     def set_view(self, view):
         self.left = view[0]
         self.right = view[1]
@@ -49,6 +62,11 @@ class Viewer():
 
         # Not sure why but I had to switch the bottom and top or the vertices flipped
         return _left, _right, _top, _bottom
+
+    def dataDistance(self):
+        left, right, top, bottom = self.unprojectView()
+        # Returns distance from bottom-left to top-right
+        return math.hypot(left-right, top-bottom)
 
 
 class ViewTile():
