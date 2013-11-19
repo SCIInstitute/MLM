@@ -87,7 +87,6 @@ class ParseCellData():
     def get_bc_data(self):
         return self.bc_data
 
-
 class ParseParallelCellData(ParseCellData):
     rendered_file = "tmp/parallelData.bin"
 
@@ -172,6 +171,7 @@ class CellTypeDataSet():
     """
     Sets The data type set into this object
 
+    title   : expecting tuple
     dataSet : tuple (dataInformation,) # Must be in the format of numpy array
     rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
     rgbh    : Same values as the 'rgb', this is the highlight color

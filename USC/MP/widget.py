@@ -61,6 +61,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.mouse_pos = None
 
         self.view = viewer.get_View()
+        # get title of data set
+        self.title = viewer.get_Title()
 
         self.data_sets = viewer.get_Data()
         self.tool_qb = ToolQB()
@@ -71,6 +73,22 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         self.graphicsProxyWidget()
 
+        # plot labels
+        gl.glPushMatrix()
+        gl.glRotate(90,0,0,1)
+        self.label = QtGui.QLabel(self.title, self)
+        self.label.setAutoFillBackground(True)
+        color = QtGui.QColor(255, 255, 255)
+        alpha = 255
+        values = "{r}, {g}, {b}, {a}".format(r = color.red(),
+                                             g = color.green(),
+                                             b = color.blue(),
+                                             a = alpha)
+        self.label.setStyleSheet("QLabel { background-color: rgba("+values+"); }")
+        gl.glPopMatrix()
+        # draw axes
+
+        # highlighting
         for dset in self.data_sets:
             self.scale_x = viewer.view.width()
             self.scale_y = viewer.view.height()
@@ -98,6 +116,10 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         gl.glLoadIdentity()
         gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
+
+    # flesh this out- want to have it dynamically resize
+    def draw_axes(self, axis1, axis2):
+        return 0
 
     def initializeGL(self):
         """
