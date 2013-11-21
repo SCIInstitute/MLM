@@ -1,7 +1,7 @@
 from enum import Enum
 import math
 
-__author__ = 'mavinm'
+__author__ = 'mavin martin'
 
 
 
