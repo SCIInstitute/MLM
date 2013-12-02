@@ -24,46 +24,54 @@ class GuiCellPlot(QtGui.QMainWindow):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
+        # these are the default height of the window
         self.width = 800
         self.height = 600
 
-        # all three plots as widgets. We want these as separate blocks so we can have axis and things
+        # all three plots as widgets with separate labels.
+        # We want these as separate blocks so we can have axis and things
+        mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
+        mea_lea_label.setAutoFillBackground(True)
         mea_lea_widget = GLUIWidget(mea_lea_tile)
+        gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
+        gc_label.setAutoFillBackground(True)
         gc_widget = GLUIWidget(gc_tile)
+        bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
+        bc_label.setAutoFillBackground(True)
         bc_widget = GLUIWidget(bc_tile)
 
-        self.grid = QtGui.QGridLayout(self.central)
-        self.grid.setSpacing(10)
+        #self.grid = QtGui.QGridLayout(self.central)
+        #self.grid.setSpacing(0)
+        #self.grid.setRowMinimumHeight(0, 1)
 
-        # add all the plot widgets to the layout
-        self.grid.addWidget(bc_widget, 1, 0)
-        self.grid.addWidget(gc_widget, 2, 0, 5, 0)
-        self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
+        self.boxy = QtGui.QVBoxLayout(self.central)
+
+        # add all the plot widgets and labels to the layout
+        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)      #, 0, 0)
+        self.boxy.addWidget(bc_widget, 2)                           #, 1, 0)
+        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)      #, 2, 0)
+        self.boxy.addWidget(gc_widget, 8)                           #, 3, 0, 6, 0)  # row x, col y, w row, h col
+        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight) #, 8, 0)
+        self.boxy.addWidget(mea_lea_widget, 3)                      #, 9, 0, 2, 0)
 
         self.resize(self.width, self.height)
         self.setWindowTitle("ParaCELLsys")
 
         self.setCentralWidget(self.central)
 
-
 class GLPlotWidget(QGLWidget, ShaderCreator):
-    # default window size
-    width, height = 600, 600
-
+    """
+    Anything here is just for the plot objects
+    """
     def __init__(self, viewer):
         QGLWidget.__init__(self)
 
-        self.width = 0
-        self.height = 0
         self.mouse_origin = 0
         self.quadric = None
         self.highlight_shader = None
         self.mouse_pos = None
 
         self.view = viewer.get_View()
-        # get title of data set
-        self.title = viewer.get_Title()
-
         self.data_sets = viewer.get_Data()
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
@@ -72,20 +80,6 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.kd_tree = []
 
         self.graphicsProxyWidget()
-
-        # plot labels
-        gl.glPushMatrix()
-        gl.glRotate(90,0,0,1)
-        self.label = QtGui.QLabel(self.title, self)
-        self.label.setAutoFillBackground(True)
-        color = QtGui.QColor(255, 255, 255)
-        alpha = 255
-        values = "{r}, {g}, {b}, {a}".format(r = color.red(),
-                                             g = color.green(),
-                                             b = color.blue(),
-                                             a = alpha)
-        self.label.setStyleSheet("QLabel { background-color: rgba("+values+"); }")
-        gl.glPopMatrix()
         # draw axes
 
         # highlighting
@@ -132,7 +126,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
     # flesh this out- want to have it dynamically resize
     def draw_axes(self, axis1, axis2):
-        return 0
+        pass
 
     def initializeGL(self):
         """
@@ -229,7 +223,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         gl.glFlush()
 
     def resizeGL(self, width, height):
-        """Called upon window resizing: reinitialize the viewport.
+        """
+        Called upon window resizing: reinitialize the viewport.
         """
         # update the window size
         self.width, self.height = width, height
@@ -261,6 +256,7 @@ class GLUIWidget(UI, GLPlotWidget):
     """
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
+
 
 
     def mousePressEventLeft(self, event):

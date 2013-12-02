@@ -25,10 +25,10 @@ print str(bc_data.shape[0]) + " Basket cell spikes."
 
 app = QtGui.QApplication(sys.argv)
 
-mea_set = CellTypeDataSet("mea_data_set", mea_data, rgb=(0, 0, .5))
-lea_set = CellTypeDataSet("lea_data_set", lea_data, rgb=(.5, 0, 0))
-gc_set = CellTypeDataSet("gc_data_set", gc_data, rgb=(0, .5, .5))
-bc_set = CellTypeDataSet("bc_data_set", bc_data, rgb=(.5, 0, .5))
+mea_set = CellTypeDataSet("Cell # (MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
+lea_set = CellTypeDataSet("LEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
+gc_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
+bc_set = CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
 
 # These are the individual tiles that will have information about the dataset
 mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
