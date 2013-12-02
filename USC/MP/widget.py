@@ -280,10 +280,9 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
             else:
-                QMessageBox.about(self, "ERROR", "Your view window is too small to compute, reloading original view.")
-                self.resetToOriginalView()
+                QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
             self.repaint()
-        if callback == Callbacks.CLICK:
+        elif callback == Callbacks.CLICK:
             tree_num, pt_num, distance, x, y = self.find_data_pos()
             print "Focus Point Number= " + str(pt_num)
             print "Distance from Mouse= " + str(distance)
