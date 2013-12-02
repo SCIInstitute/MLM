@@ -310,7 +310,7 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.prevView[3] = self.view.orig_view[3]
                 """
             self.view.set_view(self.prevView)
-                self.repaint()
+            self.repaint()
             if callback == Callbacks.CLICK:
                 tree_num, pt_num, distance, x, y = self.find_data_pos()
                 print "Focus Point Number= " + str(pt_num)
