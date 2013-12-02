@@ -94,11 +94,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # set orthographic projection (2D only)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
-        if (viewArray[0] == viewArray[1]) or (viewArray[2] == viewArray[3]):
-            QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
-            viewArray = self.prevView
-        else:
-            self.prevView = [viewArray[0], viewArray[1], viewArray[2], viewArray[3]]
+
+        self.prevView = [viewArray[0], viewArray[1], viewArray[2], viewArray[3]]
         gl.glOrtho(viewArray[0], viewArray[1], viewArray[2], viewArray[3], -100, 100)
         self.repaint()
 
@@ -250,11 +247,11 @@ class GLUIWidget(UI, GLPlotWidget):
         self.tool_qb.mouse_down(event, Tools.ZOOM_IN)
 
     def mousePressEventRight(self, event):
-        self.tool_qb.mouse_down(event, Tools.SCALING, self.height)
+        self.tool_qb.mouse_down(event, Tools.SCALING, window_height=self.height)
 
     def mouseReleaseEventLeft(self, event):
         self.rubberband.hide()
-        callback = self.tool_qb.mouse_up(event, Tools.ZOOM_IN)
+        callback = self.tool_qb.mouse_up(event, Tools.ZOOM_IN, parent=self)
         if callback == Callbacks.RESIZE:
             print "Resizing"
             if self.rubberband.box.dataDistance() > .1:
@@ -276,6 +273,7 @@ class GLUIWidget(UI, GLPlotWidget):
             self.resetToOriginalView()
         else:
             # See's if the view window is larger than the data window
+            """
             if self.view.orig_view[0] > self.prevView[0]:
                 self.prevView[0] = self.view.orig_view[0]
             if self.view.orig_view[1] > self.prevView[1]:
@@ -284,6 +282,7 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.prevView[2] = self.view.orig_view[2]
             if self.view.orig_view[3] > self.prevView[3]:
                 self.prevView[3] = self.view.orig_view[3]
+                """
             self.view.set_view(self.prevView)
 
     def mouseMoveEvent(self, event):

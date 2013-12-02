@@ -1,6 +1,7 @@
 from enum import Enum
 import math
 import OpenGL.GLU as glu
+from PyQt4.QtGui import QWidget, QMessageBox
 
 __author__ = 'mavinm'
 
@@ -15,6 +16,7 @@ class Callbacks(Enum):
     NONE = 0
     RESIZE = 1
     CLICK = 2
+    RESET = 3
 
 
 class Singleton(type):
@@ -29,7 +31,7 @@ class Singleton(type):
 class ToolQB():
     __metaclass__ = Singleton
 
-    def zoom_in(self, mouse):
+    def zoom_in(self, mouse, parent=None):
         if self.prev_position_rect is None:
             self.prev_position_rect = mouse.pos()
         else:
@@ -38,9 +40,13 @@ class ToolQB():
             curr_xy = (current_position.x(), current_position.y())
             dist = math.hypot(curr_xy[0] - prev_xy[0],
                               curr_xy[1] - prev_xy[1])
+
             if dist < 2:
                 print "Treat as a click"
                 callback = Callbacks.CLICK
+            elif abs(curr_xy[0] - prev_xy[0]) < 2 or abs(curr_xy[1] - prev_xy[1]) < 2:
+                QMessageBox.about(parent, "ERROR", "Your view window is too small to compute.")
+                callback = Callbacks.RESET
             else:
                 print "Zoom in"
                 callback = Callbacks.RESIZE
@@ -85,9 +91,9 @@ class ToolQB():
         elif tool == Tools.SCALING:
             self.scale(mouse, False, window_height)
 
-    def mouse_up(self, mouse, tool):
+    def mouse_up(self, mouse, tool, parent=None):
         if tool == Tools.ZOOM_IN:
-            return self.zoom_in(mouse)
+            return self.zoom_in(mouse, parent)
         elif tool == Tools.SCALING:
             return self.scale(mouse, True)
 
