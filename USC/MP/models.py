@@ -87,7 +87,6 @@ class ParseCellData():
     def get_bc_data(self):
         return self.bc_data
 
-
 class ParseParallelCellData(ParseCellData):
     rendered_file = "tmp/parallelData.bin"
 
@@ -98,12 +97,12 @@ class ParseParallelCellData(ParseCellData):
         imageName = "./" + dataDir + "/recurInh_i.png"
         fileName = "./" + dataDir + "/spikeTimes"
 
-        f = open(fileName, 'r')
+        f = open(fileName, 'rb')  # using 'rb' for windows
         spikeData = cPickle.load(f)
         f.close()
 
         # Load in locations of the cells
-        f = open("./" + dataDir + "/sharedData.pickle")
+        f = open("./" + dataDir + "/sharedData.pickle", 'rb')  # using 'rb' for windows
         combinedData = []
         combinedData = cPickle.load(f)
         f.close()
@@ -170,8 +169,9 @@ class ParseParallelCellData(ParseCellData):
 
 class CellTypeDataSet():
     """
-    Set's The data type set into this object
+    Sets The data type set into this object
 
+    title   : expecting tuple
     dataSet : tuple (dataInformation,) # Must be in the format of numpy array
     rgb     : Red, Green, Blue color values ranging from 0 - 1 for these points
     rgbh    : Same values as the 'rgb', this is the highlight color

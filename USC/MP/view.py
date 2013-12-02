@@ -81,8 +81,15 @@ class ViewTile():
         self.data_set = data_set
         self.view = Viewer(view)
 
+        self.title = ""
+        for data in data_set:
+            self.title += data.getTitle()
+
     def get_Data(self):
         return self.data_set
 
     def get_View(self):
         return self.view
+
+    def get_Title(self):
+        return self.title

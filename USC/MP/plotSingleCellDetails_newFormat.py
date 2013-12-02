@@ -4,7 +4,6 @@ import pylab as plt
 from tools import ToolQB
 from data.simulationParameters import *
 
-
 class plotSingleCellDetails:
     """
     Plots the single cell from the rasterized layout and shows all driver cells
@@ -18,7 +17,7 @@ class plotSingleCellDetails:
         fileName = "./" + dir + "/spikeTimes"
         cellVoltDataFile = "./" + dir + "/voltageTraces/granuleCells_CPU0.out"
 
-        f = open(fileName, 'r')
+        f = open(fileName, 'rb')
         spikeData = cPickle.load(f)
         f.close()
 

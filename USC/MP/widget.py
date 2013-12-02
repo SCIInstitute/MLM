@@ -17,16 +17,17 @@ __author__ = 'Mavin Martin'
 
 class GuiCellPlot(QtGui.QMainWindow):
     """
-    Plots all of the cells in one graph
+    Singleton: plots all of the cells in one graph and is called in main.
     """
-
-    width = 800
-    height = 500
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
         self.central = QWidget(self)
 
+        self.width = 800
+        self.height = 600
+
+        # all three plots as widgets. We want these as separate blocks so we can have axis and things
         mea_lea_widget = GLUIWidget(mea_lea_tile)
         gc_widget = GLUIWidget(gc_tile)
         bc_widget = GLUIWidget(bc_tile)
@@ -34,12 +35,13 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.grid = QtGui.QGridLayout(self.central)
         self.grid.setSpacing(10)
 
+        # add all the plot widgets to the layout
         self.grid.addWidget(bc_widget, 1, 0)
         self.grid.addWidget(gc_widget, 2, 0, 5, 0)
         self.grid.addWidget(mea_lea_widget, 7, 0, 2, 0)
 
         self.resize(self.width, self.height)
-        self.setWindowTitle("Cell Plot")
+        self.setWindowTitle("ParaCELLsys")
 
         self.setCentralWidget(self.central)
 
@@ -59,6 +61,8 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.mouse_pos = None
 
         self.view = viewer.get_View()
+        # get title of data set
+        self.title = viewer.get_Title()
 
         self.data_sets = viewer.get_Data()
         self.tool_qb = ToolQB()
@@ -69,6 +73,22 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         self.graphicsProxyWidget()
 
+        # plot labels
+        gl.glPushMatrix()
+        gl.glRotate(90,0,0,1)
+        self.label = QtGui.QLabel(self.title, self)
+        self.label.setAutoFillBackground(True)
+        color = QtGui.QColor(255, 255, 255)
+        alpha = 255
+        values = "{r}, {g}, {b}, {a}".format(r = color.red(),
+                                             g = color.green(),
+                                             b = color.blue(),
+                                             a = alpha)
+        self.label.setStyleSheet("QLabel { background-color: rgba("+values+"); }")
+        gl.glPopMatrix()
+        # draw axes
+
+        # highlighting
         for dset in self.data_sets:
             self.scale_x = viewer.view.width()
             self.scale_y = viewer.view.height()
@@ -110,6 +130,10 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         self.setOrtho((l, r, b, t))
 
+    # flesh this out- want to have it dynamically resize
+    def draw_axes(self, axis1, axis2):
+        return 0
+
     def initializeGL(self):
         """
         Initialize OpenGL, VBOs, upload data on the GPU, etc.
@@ -126,13 +150,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.mouse_pos = event.pos()
         QGLWidget.mouseMoveEvent(self, event)
 
-    """
-    Looks at mouse position and cacluates data position of data point closest to cursor
-
-    Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
-    """
-
     def find_data_pos(self):
+        """
+        Looks at mouse position and calculates data position of data point closest to cursor
+        Returns: (tree number, point number, distance from cursor, x-position in view, y-position in view
+        """
         x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
 
         x_ /= self.scale_x
@@ -234,8 +256,12 @@ def convertMousePoint2DrawPlane(event_pos, height):
 
 
 class GLUIWidget(UI, GLPlotWidget):
+    """
+    Widget class for the three cell plots. Called in GuiCellPlot. Inherits from GLPlotWidget
+    """
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
+
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
@@ -284,6 +310,12 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.prevView[3] = self.view.orig_view[3]
                 """
             self.view.set_view(self.prevView)
+                self.repaint()
+            if callback == Callbacks.CLICK:
+                tree_num, pt_num, distance, x, y = self.find_data_pos()
+                print "Focus Point Number= " + str(pt_num)
+                print "Distance from Mouse= " + str(distance)
+                print "Point = (" + str(x) + ", " + str(y) + ")"
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
