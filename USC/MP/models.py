@@ -25,6 +25,8 @@ class ParseCellData():
         self.lea_data = None
         self.gc_data = None
         self.bc_data = None
+        self.bc_data_pos = None
+        self.gc_data_pos = None
 
         self.num_cells = num_cells
         self.t_start = t_start
@@ -57,6 +59,10 @@ class ParseCellData():
         np.save(f, self.gc_data)
         np.save(f, self.bc_data)
 
+        # Saves position coordinates
+        np.save(f, self.bc_data_pos)
+        np.save(f, self.gc_data_pos)
+
         f.close()
 
     def file_on_disk(self):
@@ -69,6 +75,9 @@ class ParseCellData():
         self.lea_data = np.load(f)
         self.gc_data = np.load(f)
         self.bc_data = np.load(f)
+
+        self.bc_data_pos = np.load(f)
+        self.gc_data_pos = np.load(f)
 
         f.close()
 
@@ -86,6 +95,13 @@ class ParseCellData():
 
     def get_bc_data(self):
         return self.bc_data
+
+    def get_bc_position(self):
+        return self.bc_data_pos
+
+    def get_gc_position(self):
+        return self.gc_data_pos
+
 
 class ParseParallelCellData(ParseCellData):
     rendered_file = "tmp/parallelData.bin"
@@ -164,6 +180,10 @@ class ParseParallelCellData(ParseCellData):
         self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
         self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
+        # Stores the position into a matrix
+        self.bc_data_pos = np.array([BC_xpos, BC_pos], dtype=np.float32).transpose()
+        self.gc_data_pos = np.array([GC_xpos, GC_pos], dtype=np.float32).transpose()
+
         self.save()
 
 
@@ -203,6 +223,7 @@ class CellTypeDataSet():
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])
 
     def getColor(self):
+        # Set the alpha at .2
         return gl.glColor4f(self.rgb[0], self.rgb[1], self.rgb[2], 0.2)
 
     def getHighlightColor(self):

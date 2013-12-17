@@ -59,10 +59,17 @@ class GuiCellPlot(QtGui.QMainWindow):
 
         self.setCentralWidget(self.central)
 
+    def keyPressEvent(self, QKeyEvent):
+        # 67 = 'c'
+        if QKeyEvent.key() == 67:
+            print 'c pressed'
+
+
 class GLPlotWidget(QGLWidget, ShaderCreator):
     """
     Anything here is just for the plot objects
     """
+
     def __init__(self, viewer):
         QGLWidget.__init__(self)
 
@@ -175,10 +182,9 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
 
         self.data_sets[tree_num].getHighlightColor()
         gl.glPushMatrix()
-        gl.glTranslatef(x, y, 0)
         gl.glPointSize(10)
         gl.glBegin(gl.GL_POINTS)
-        gl.glVertex2f(0, 0)
+        gl.glVertex2f(x, y)
         gl.glEnd()
         gl.glPointSize(1)
         gl.glPopMatrix()
@@ -200,6 +206,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         #    gl.glUniform2f(self.mouse_pos_handler, x_, y_)
         #    gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
 
+        # dSet = CellTypeDataSet()
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor()
@@ -257,9 +264,9 @@ class GLUIWidget(UI, GLPlotWidget):
     """
     Widget class for the three cell plots. Called in GuiCellPlot. Inherits from GLPlotWidget
     """
+
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
-
 
 
     def mousePressEventLeft(self, event):
