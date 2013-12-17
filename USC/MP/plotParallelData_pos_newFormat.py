@@ -4,7 +4,6 @@ from PyQt4 import QtGui, QtCore
 import sys
 from globals import *
 from models import *
-from plotSingleCellDetails_newFormat import plotSingleCellDetails
 from widget import GuiCellPlot
 from view import ViewTile
 

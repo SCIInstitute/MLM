@@ -190,6 +190,9 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         """
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
 
         #gl.glUseProgram(self.highlight_shader)
         #if self.mouse_pos is not None:

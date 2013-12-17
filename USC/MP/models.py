@@ -203,7 +203,7 @@ class CellTypeDataSet():
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])
 
     def getColor(self):
-        return gl.glColor(self.rgb[0], self.rgb[1], self.rgb[2])
+        return gl.glColor4f(self.rgb[0], self.rgb[1], self.rgb[2], 0.2)
 
     def getHighlightColor(self):
         return gl.glColor(self.rgb[0] + .2, self.rgb[1] + .2, self.rgb[2] + .2)
