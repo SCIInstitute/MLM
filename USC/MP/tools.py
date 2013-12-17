@@ -3,7 +3,7 @@ import math
 import OpenGL.GLU as glu
 from PyQt4.QtGui import QWidget, QMessageBox
 
-__author__ = 'mavinm'
+__author__ = 'mavin martin'
 
 
 class Tools(Enum):
