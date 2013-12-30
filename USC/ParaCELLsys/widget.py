@@ -63,6 +63,12 @@ class GuiCellPlot(QtGui.QMainWindow):
         # 67 = 'c'
         if QKeyEvent.key() == 67:
             print 'c pressed'
+        # 68 = 'd'
+        elif QKeyEvent.key() == 68:
+            for child in self.boxy.children():
+                print child
+
+        print QKeyEvent.key()
 
 
 class GLPlotWidget(QGLWidget, ShaderCreator):
@@ -74,6 +80,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         QGLWidget.__init__(self)
 
         self.mouse_origin = 0
+        self.alpha = .2
         self.quadric = None
         self.highlight_shader = None
         self.mouse_pos = None
@@ -101,6 +108,9 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
             self.kd_tree.append(
                 KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=USE_CACHING).load()
             )
+
+    def setAlpha(self):
+        print "Setting alpha"
 
     def event(self, QEvent):
         if QEvent.type() == QtCore.QEvent.Leave:
@@ -209,7 +219,7 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         # dSet = CellTypeDataSet()
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
-            dSet.getColor()
+            dSet.getColor(self.alpha)
             gl.glPushMatrix()
             dSet.getTranslation()
             # bind the VBO

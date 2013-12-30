@@ -222,9 +222,9 @@ class CellTypeDataSet():
     def getTranslation(self):
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])
 
-    def getColor(self):
+    def getColor(self, alpha):
         # Set the alpha at .2
-        return gl.glColor4f(self.rgb[0], self.rgb[1], self.rgb[2], 0.2)
+        return gl.glColor4f(self.rgb[0], self.rgb[1], self.rgb[2], alpha)
 
     def getHighlightColor(self):
         return gl.glColor(self.rgb[0] + .2, self.rgb[1] + .2, self.rgb[2] + .2)
