@@ -89,14 +89,18 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
 
         self.view = viewer.get_View()
         self.data_sets = viewer.get_Data()
+        self.title = viewer.get_Title()
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
 
         self.kd_tree = []
-
+        self.kd_tree_active = False
         self.graphicsProxyWidget()
         # draw axes
+
+        # Starts the thread of anything inside of the run() method
+        self.start()
 
     def run(self):
         # highlighting
@@ -109,8 +113,10 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
             _data[1] /= float(self.scale_y)
             _data = _data.transpose()
             self.kd_tree.append(
-                KDTreeWritable(dset.getTitle(), _data, leafsize=10000, use_cache_data=False).load()
+                KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=False).load()
             )
+        print "Data interactivity for " + self.title + " is complete"
+        self.kd_tree_active = True
 
     def setAlpha(self):
         print "Setting alpha"
@@ -189,6 +195,9 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         return tree_num, pt_num, d, focus_x * self.scale_x, focus_y * self.scale_y
 
     def draw_kd_tree_point(self):
+        if not self.kd_tree_active:
+            return
+
         gl.glEnable(gl.GL_POINT_SMOOTH)
 
         tree_num, pt_num, distance, x, y = self.find_data_pos()
@@ -306,6 +315,9 @@ class GLUIWidget(UI, GLPlotWidget):
                 QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
             self.repaint()
         elif callback == Callbacks.CLICK:
+            if not self.kd_tree_active:
+                print "Data is still being evaluated, please wait"
+                return
             tree_num, pt_num, distance, x, y = self.find_data_pos()
             print "Focus Point Number= " + str(pt_num)
             print "Distance from Mouse= " + str(distance)
