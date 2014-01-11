@@ -11,6 +11,7 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import numpy as np
 from ui import UI
+import threading
 
 __author__ = 'Mavin Martin'
 
@@ -71,13 +72,14 @@ class GuiCellPlot(QtGui.QMainWindow):
         print QKeyEvent.key()
 
 
-class GLPlotWidget(QGLWidget, ShaderCreator):
+class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
     """
     Anything here is just for the plot objects
     """
 
     def __init__(self, viewer):
         QGLWidget.__init__(self)
+        threading.Thread.__init__(self)
 
         self.mouse_origin = 0
         self.alpha = .2
@@ -96,10 +98,11 @@ class GLPlotWidget(QGLWidget, ShaderCreator):
         self.graphicsProxyWidget()
         # draw axes
 
+    def run(self):
         # highlighting
         for dset in self.data_sets:
-            self.scale_x = viewer.view.width()
-            self.scale_y = viewer.view.height()
+            self.scale_x = self.view.width()
+            self.scale_y = self.view.height()
             _data = np.array(dset.getDataSet(), copy=True)
             _data = _data.transpose()
             _data[0] /= float(self.scale_x)
