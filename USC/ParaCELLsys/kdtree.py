@@ -2,6 +2,7 @@ import cPickle
 import os
 from scipy.spatial import kdtree as _kd
 import zlib
+import re
 
 
 class KDTreeWritable(_kd.KDTree):
@@ -21,7 +22,7 @@ class KDTreeWritable(_kd.KDTree):
         self.leafsize = leafsize
         self.use_cache_data = use_cache_data
 
-        self.rendered_file += title
+        self.rendered_file += re.sub(r'[^a-zA-Z\[\]]', '', title) + ".bin"
 
         _kd.node = _kd.KDTree.node
         _kd.leafnode = _kd.KDTree.leafnode
@@ -42,6 +43,7 @@ class KDTreeWritable(_kd.KDTree):
     """
     Used to store a previous kd tree into a variable
     """
+
     def readCachedFile(self):
         if not os.path.isfile(self.rendered_file):
             _kd.KDTree.__init__(self, self.data, self.leafsize)
