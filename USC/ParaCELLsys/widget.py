@@ -103,17 +103,17 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         self.start()
 
     def run(self):
-        # highlighting
+        # highlighting being run on another thread
         for dset in self.data_sets:
             self.scale_x = self.view.width()
             self.scale_y = self.view.height()
-            _data = np.array(dset.getDataSet(), copy=True)
-            _data = _data.transpose()
-            _data[0] /= float(self.scale_x)
-            _data[1] /= float(self.scale_y)
-            _data = _data.transpose()
+
+            _data = np.array(dset.getFilteredDataSet(self.view.view()), copy=True)
+            _data[:, 0] /= float(self.scale_x)
+            _data[:, 1] /= float(self.scale_y)
             self.kd_tree.append(
-                KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=False).load()
+                KDTreeWritable(dset.getTitle(), _data, leafsize=100,
+                               use_cache_data=False).load()
             )
         print "Data interactivity for " + self.title + " is complete"
         self.kd_tree_active = True

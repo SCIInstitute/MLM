@@ -3,6 +3,7 @@ import OpenGL.arrays.vbo as glvbo
 import os
 import cPickle, pickle
 import numpy as np
+import time
 
 __author__ = 'mavinm'
 
@@ -218,6 +219,12 @@ class CellTypeDataSet():
 
     def getDataSet(self):
         return self.data_set
+
+    def getFilteredDataSet(self, view):
+        data = self.data_set[
+            (view[0] <= self.data_set[:, 0]) & (self.data_set[:, 0] <= view[1]) &
+            (view[2] <= self.data_set[:, 1]) & (self.data_set[:, 1] <= view[3])]
+        return data
 
     def getTranslation(self):
         return gl.glTranslate(self.xyz[0], self.xyz[1], self.xyz[2])
