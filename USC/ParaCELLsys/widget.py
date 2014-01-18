@@ -12,6 +12,7 @@ import OpenGL.GLU as glu
 import numpy as np
 from ui import UI
 import threading
+import time
 
 __author__ = 'Mavin Martin'
 
@@ -93,17 +94,23 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         self.tool_qb = ToolQB()
         self.rubberband = RectRubberband()
         self.setMouseTracking(True)
+        self.prevView = None
 
         self.kd_tree = []
         self.kd_tree_active = False
         self.graphicsProxyWidget()
+        self.scale_x = 0
+        self.scale_y = 0
+        self.width = 0
+        self.height = 0
+
         # draw axes
 
         # Starts the thread of anything inside of the run() method
         self.start()
 
-    def run(self):
-        # highlighting being run on another thread
+    def recreate_kd_tree(self):
+        # highlighting using the kd_tree method being iterated over time
         for dset in self.data_sets:
             self.scale_x = self.view.width()
             self.scale_y = self.view.height()
@@ -115,8 +122,19 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
                 KDTreeWritable(dset.getTitle(), _data, leafsize=100,
                                use_cache_data=False).load()
             )
-        print "Data interactivity for " + self.title + " is complete"
+        print "kd_tree complete for " + self.title
         self.kd_tree_active = True
+
+    def run(self):
+        # TODO - HANDLE Program exiting
+        while self.program_active:
+
+            if not self.kd_tree_active:
+                self.kd_tree = []
+                print "Creating kd_tree for " + self.title
+                self.recreate_kd_tree()
+
+            time.sleep(.25)
 
     def setAlpha(self):
         print "Setting alpha"
@@ -268,6 +286,7 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         print "Resetting to original view: " + str(self.view.orig_view)
         self.setOrtho(self.view.orig_view)
         self.view.set_view(self.view.orig_view)
+        self.kd_tree_active = False
 
     def closeEvent(self, QCloseEvent):
         glu.gluDeleteQuadric(self.quadratic)
@@ -289,7 +308,6 @@ class GLUIWidget(UI, GLPlotWidget):
 
     def __init__(self, viewer):
         GLPlotWidget.__init__(self, viewer)
-
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
@@ -313,6 +331,7 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.setOrtho(self.view.view())
             else:
                 QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
+            self.kd_tree_active = False
             self.repaint()
         elif callback == Callbacks.CLICK:
             if not self.kd_tree_active:
