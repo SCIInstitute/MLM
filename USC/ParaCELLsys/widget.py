@@ -42,6 +42,8 @@ class GuiCellPlot(QtGui.QMainWindow):
         bc_label.setAutoFillBackground(True)
         bc_widget = GLUIWidget(bc_tile)
 
+        self.widgets = (mea_lea_widget, gc_widget, bc_widget)
+
         #self.grid = QtGui.QGridLayout(self.central)
         #self.grid.setSpacing(0)
         #self.grid.setRowMinimumHeight(0, 1)
@@ -72,8 +74,12 @@ class GuiCellPlot(QtGui.QMainWindow):
 
         print QKeyEvent.key()
 
+    def closeEvent(self, QCloseEvent):
+        for widget in self.widgets:
+            widget.closeEvent(QCloseEvent)
 
-class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
+
+class GLPlotWidget(QGLWidget, threading.Thread):
     """
     Anything here is just for the plot objects
     """
@@ -82,10 +88,9 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         QGLWidget.__init__(self)
         threading.Thread.__init__(self)
 
+        self.program_active = True
         self.mouse_origin = 0
         self.alpha = .2
-        self.quadric = None
-        self.highlight_shader = None
         self.mouse_pos = None
 
         self.view = viewer.get_View()
@@ -178,11 +183,6 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
-        self.highlight_shader = self.createShader("shaders/mouseHover.vs", "shaders/mouseHover.fs")
-        self.mouse_pos_handler = gl.glGetUniformLocation(self.highlight_shader, "mouse_pos")
-        self.window_size_handler = gl.glGetUniformLocation(self.highlight_shader, "window_size")
-        self.quadric = glu.gluNewQuadric()
-        glu.gluQuadricNormals(self.quadric, glu.GLU_SMOOTH)
 
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()
@@ -289,10 +289,8 @@ class GLPlotWidget(QGLWidget, threading.Thread, ShaderCreator):
         self.kd_tree_active = False
 
     def closeEvent(self, QCloseEvent):
-        glu.gluDeleteQuadric(self.quadratic)
-
-        gl.glDeleteShader(self.highlight_shader)
-        glu.gluDeleteQuadric(self.quadric)
+        print "Closing event called"
+        self.program_active = False
 
         QGLWidget.closeEvent(self, QCloseEvent)
 
