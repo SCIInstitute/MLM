@@ -10,9 +10,13 @@ import OpenGL.GLU as glu
 import numpy as np
 from ui import UI
 import threading
+import thread
 import time
 
 __author__ = 'Mavin Martin'
+#TODO - Get KD Tree Scaling working correctly for self.ratio
+#TODO - Get KD Tree working in the zooming-out feature with the right click zoom-out control
+#TODO - Get KD Tree working for resizing window
 
 
 class GuiCellPlot(QtGui.QMainWindow):
@@ -108,7 +112,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.height = 0
         self.ratio = 0
         self.orig_kd_tree = None
-        self.lock = threading.Lock()
+        self.lock = thread.allocate_lock()
 
         # draw axes
 
@@ -126,7 +130,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             # highlighting using the kd_tree method being iterated over time
             for dset in self.data_sets:
                 _data = np.array(dset.getFilteredDataSet(self.view.view()), copy=True)
-                _data[:, 0] /= self.scale_x
+                _data[:, 0] /= (self.scale_x * self.ratio)
                 _data[:, 1] /= self.scale_y
                 self.kd_tree.append(
                     KDTreeWritable(dset.getTitle(), _data, leafsize=100,
@@ -203,7 +207,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         """
         x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
 
-        x_ /= self.scale_x
+        x_ /= (self.scale_x * self.ratio)
         y_ /= self.scale_y
 
         d = 99999999999
@@ -218,7 +222,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         if pt_num == -1 or tree_num == -1:
             raise KeyError("Unable to get information")
         focus_x, focus_y = self.kd_tree[tree_num].data[pt_num]
-        return tree_num, pt_num, d, focus_x * self.scale_x, focus_y * self.scale_y
+        return tree_num, pt_num, d, focus_x * self.scale_x * self.ratio, focus_y * self.scale_y
 
     def draw_kd_tree_point(self):
         if not self.kd_tree_active:
@@ -291,7 +295,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     def resetToOriginalKdTree(self):
         with self.lock:
             self.kd_tree = self.orig_kd_tree
-            self.ratio = float(self.width) / float(self.height)
+            self.ratio = float(self.height) / float(self.width)
             self.scale_x = float(self.view.width())
             self.scale_y = float(self.view.height())
 
