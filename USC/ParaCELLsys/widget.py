@@ -14,9 +14,9 @@ import thread
 import time
 
 __author__ = 'Mavin Martin'
-#TODO - Get KD Tree Scaling working correctly for self.ratio
-#TODO - Get KD Tree working in the zooming-out feature with the right click zoom-out control
-#TODO - Get KD Tree working for resizing window
+#TODO mavinm - Get KD Tree Scaling working correctly for self.ratio
+#TODO mavinm - Get KD Tree working in the zooming-out feature with the right click zoom-out control
+#TODO mavinm - Get KD Tree working for resizing window
 
 
 class GuiCellPlot(QtGui.QMainWindow):
@@ -123,13 +123,19 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         if (self.width == 0) or (self.height == 0):
             return
         with self.lock:
-            self.ratio = float(self.width) / float(self.height)
+            # TODO - Get this other ratio thing working
+            # self.ratio = float(self.width) / float(self.height)
+            self.ratio = 1
             self.scale_x = float(self.view.width())
             self.scale_y = float(self.view.height())
 
             # highlighting using the kd_tree method being iterated over time
             for dset in self.data_sets:
                 _data = np.array(dset.getFilteredDataSet(self.view.view()), copy=True)
+                # In case the data-size is empty after filtering
+                if _data.size == 0:
+                    continue
+
                 _data[:, 0] /= (self.scale_x * self.ratio)
                 _data[:, 1] /= self.scale_y
                 self.kd_tree.append(
@@ -295,7 +301,9 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     def resetToOriginalKdTree(self):
         with self.lock:
             self.kd_tree = self.orig_kd_tree
-            self.ratio = float(self.height) / float(self.width)
+            # TODO - Get this other ratio thing working
+            # self.ratio = float(self.height) / float(self.width)
+            self.ratio = 1
             self.scale_x = float(self.view.width())
             self.scale_y = float(self.view.height())
 
