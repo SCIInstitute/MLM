@@ -131,7 +131,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.kd_tree_active = True
 
     def run(self):
-        # TODO - HANDLE Program exiting
         while self.program_active:
 
             if not self.kd_tree_active:
@@ -289,7 +288,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.kd_tree_active = False
 
     def closeEvent(self, QCloseEvent):
-        print "Closing event called"
+        print "closeEvent called for " + self.title
         self.program_active = False
 
         QGLWidget.closeEvent(self, QCloseEvent)
