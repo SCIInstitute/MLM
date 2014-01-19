@@ -247,14 +247,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-
-        #gl.glUseProgram(self.highlight_shader)
-        #if self.mouse_pos is not None:
-        #    x_, y_, z_ = glu.gluUnProject(self.mouse_pos.x(), self.height - self.mouse_pos.y(), 0)
-        #    gl.glUniform2f(self.mouse_pos_handler, x_, y_)
-        #    gl.glUniform2f(self.window_size_handler, self.view.width(), self.view.height())
-
-        # dSet = CellTypeDataSet()
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor(self.alpha)
