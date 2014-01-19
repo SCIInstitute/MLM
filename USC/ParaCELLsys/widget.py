@@ -1,11 +1,9 @@
-from globals import *
 from kdtree import KDTreeWritable
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget, QMessageBox
 from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
 from rubberband import RectRubberband
-from shaders import ShaderCreator
 from tools import ToolQB, Callbacks, Tools
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
@@ -108,6 +106,9 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.scale_y = 0
         self.width = 0
         self.height = 0
+        self.ratio = 0
+        self.orig_kd_tree = None
+        self.lock = threading.Lock()
 
         # draw axes
 
@@ -115,20 +116,28 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.start()
 
     def recreate_kd_tree(self):
-        # highlighting using the kd_tree method being iterated over time
-        for dset in self.data_sets:
-            self.scale_x = self.view.width()
-            self.scale_y = self.view.height()
+        if (self.width == 0) or (self.height == 0):
+            return
+        with self.lock:
+            self.ratio = float(self.width) / float(self.height)
+            self.scale_x = float(self.view.width())
+            self.scale_y = float(self.view.height())
 
-            _data = np.array(dset.getFilteredDataSet(self.view.view()), copy=True)
-            _data[:, 0] /= float(self.scale_x)
-            _data[:, 1] /= float(self.scale_y)
-            self.kd_tree.append(
-                KDTreeWritable(dset.getTitle(), _data, leafsize=100,
-                               use_cache_data=False).load()
-            )
-        print "kd_tree complete for " + self.title
-        self.kd_tree_active = True
+            # highlighting using the kd_tree method being iterated over time
+            for dset in self.data_sets:
+                _data = np.array(dset.getFilteredDataSet(self.view.view()), copy=True)
+                _data[:, 0] /= self.scale_x
+                _data[:, 1] /= self.scale_y
+                self.kd_tree.append(
+                    KDTreeWritable(dset.getTitle(), _data, leafsize=100,
+                                   use_cache_data=False).load()
+                )
+
+            if self.orig_kd_tree is None:
+                self.orig_kd_tree = self.kd_tree
+
+            print "kd_tree complete for " + self.title
+            self.kd_tree_active = True
 
     def run(self):
         while self.program_active:
@@ -285,7 +294,14 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         print "Resetting to original view: " + str(self.view.orig_view)
         self.setOrtho(self.view.orig_view)
         self.view.set_view(self.view.orig_view)
-        self.kd_tree_active = False
+        self.resetToOriginalKdTree()
+
+    def resetToOriginalKdTree(self):
+        with self.lock:
+            self.kd_tree = self.orig_kd_tree
+            self.ratio = float(self.width) / float(self.height)
+            self.scale_x = float(self.view.width())
+            self.scale_y = float(self.view.height())
 
     def closeEvent(self, QCloseEvent):
         print "closeEvent called for " + self.title
