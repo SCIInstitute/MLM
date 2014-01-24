@@ -19,13 +19,14 @@ __author__ = 'Mavin Martin'
 #TODO mavinm - Get KD Tree working for resizing window
 
 
-class GuiCellPlot(QtGui.QMainWindow):
+class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
     """
     Singleton: plots all of the cells in one graph and is called in main.
     """
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
+        threading.Thread.__init__(self)
         self.central = QWidget(self)
 
         # these are the default height of the window
@@ -60,10 +61,14 @@ class GuiCellPlot(QtGui.QMainWindow):
         self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight) #, 8, 0)
         self.boxy.addWidget(mea_lea_widget, 3)                      #, 9, 0, 2, 0)
 
+        self.statusBar().showMessage("READY")
+
         self.resize(self.width, self.height)
         self.setWindowTitle("ParaCELLsys")
 
         self.setCentralWidget(self.central)
+        self.program_active = True
+        self.start()
 
     def keyPressEvent(self, QKeyEvent):
         # 67 = 'c'
@@ -77,8 +82,23 @@ class GuiCellPlot(QtGui.QMainWindow):
         print QKeyEvent.key()
 
     def closeEvent(self, QCloseEvent):
+        self.program_active = False
         for widget in self.widgets:
             widget.closeEvent(QCloseEvent)
+
+    def run(self):
+        while self.program_active:
+            processing = False
+            for widget in self.widgets:
+                if not widget.kd_tree_active:
+                    processing = True
+                    break
+            if processing:
+                self.statusBar().showMessage("Processing")
+            else:
+                self.statusBar().showMessage("Complete")
+
+            time.sleep(.25)
 
 
 class GLPlotWidget(QGLWidget, threading.Thread):
@@ -86,7 +106,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     Anything here is just for the plot objects
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, parent=None):
         QGLWidget.__init__(self)
         threading.Thread.__init__(self)
 
@@ -113,6 +133,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.ratio = 0
         self.orig_kd_tree = None
         self.lock = thread.allocate_lock()
+        self.parent = parent
 
         # draw axes
 
@@ -323,8 +344,8 @@ class GLUIWidget(UI, GLPlotWidget):
     Widget class for the three cell plots. Called in GuiCellPlot. Inherits from GLPlotWidget
     """
 
-    def __init__(self, viewer):
-        GLPlotWidget.__init__(self, viewer)
+    def __init__(self, viewer, parent=None):
+        GLPlotWidget.__init__(self, viewer, parent=None)
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
