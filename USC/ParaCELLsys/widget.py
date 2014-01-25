@@ -24,14 +24,17 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
     Singleton: plots all of the cells in one graph and is called in main.
     """
 
+    # The default height of the window
+    width = 800
+    height = 600
+
     def __init__(self, mea_lea_tile, gc_tile, bc_tile):
         super(GuiCellPlot, self).__init__()
         threading.Thread.__init__(self)
         self.central = QWidget(self)
 
-        # these are the default height of the window
-        self.width = 800
-        self.height = 600
+        # Makes the widget size not resizable
+        self.setFixedSize(self.width, self.height)
 
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
@@ -54,14 +57,14 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         self.boxy = QtGui.QVBoxLayout(self.central)
 
         # add all the plot widgets and labels to the layout
-        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)      #, 0, 0)
-        self.boxy.addWidget(bc_widget, 2)                           #, 1, 0)
-        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)      #, 2, 0)
-        self.boxy.addWidget(gc_widget, 8)                           #, 3, 0, 6, 0)  # row x, col y, w row, h col
-        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight) #, 8, 0)
-        self.boxy.addWidget(mea_lea_widget, 3)                      #, 9, 0, 2, 0)
+        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
+        self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
+        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
+        self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
+        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
+        self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
 
-        self.statusBar().showMessage("READY")
+        self.statusBar().showMessage("Ready")
 
         self.resize(self.width, self.height)
         self.setWindowTitle("ParaCELLsys")
@@ -69,6 +72,9 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         self.setCentralWidget(self.central)
         self.program_active = True
         self.start()
+
+    def test(self):
+        print "Hello"
 
     def keyPressEvent(self, QKeyEvent):
         # 67 = 'c'
@@ -96,7 +102,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
             if processing:
                 self.statusBar().showMessage("Processing")
             else:
-                self.statusBar().showMessage("Complete")
+                self.statusBar().showMessage("Ready")
 
             time.sleep(.25)
 
@@ -144,9 +150,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         if (self.width == 0) or (self.height == 0):
             return
         with self.lock:
-            # TODO - Get this other ratio thing working
-            # self.ratio = float(self.width) / float(self.height)
-            self.ratio = 1
+            self.ratio = float(self.height) / float(self.width)
             self.scale_x = float(self.view.width())
             self.scale_y = float(self.view.height())
 
@@ -160,8 +164,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
                 _data[:, 0] /= (self.scale_x * self.ratio)
                 _data[:, 1] /= self.scale_y
                 self.kd_tree.append(
-                    KDTreeWritable(dset.getTitle(), _data, leafsize=100,
-                                   use_cache_data=False).load()
+                    KDTreeWritable(dset.getTitle(), _data, leafsize=100, use_cache_data=False).load()
                 )
 
             if self.orig_kd_tree is None:
@@ -310,7 +313,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         # update the window size
         self.width, self.height = width, height
         self.setOrtho(self.view.view())
-
+        print "Resizing"
         QGLWidget.resizeGL(self, width, height)
 
     def resetToOriginalView(self):
@@ -322,9 +325,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     def resetToOriginalKdTree(self):
         with self.lock:
             self.kd_tree = self.orig_kd_tree
-            # TODO - Get this other ratio thing working
-            # self.ratio = float(self.height) / float(self.width)
-            self.ratio = 1
+            self.ratio = float(self.height) / float(self.width)
             self.scale_x = float(self.view.width())
             self.scale_y = float(self.view.height())
 
