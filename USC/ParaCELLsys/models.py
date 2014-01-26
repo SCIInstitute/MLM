@@ -176,10 +176,11 @@ class ParseParallelCellData(ParseCellData):
                             BC_pos.append(BCLocs[ii][1])
                             BC_xpos.append(BCLocs[ii][0])
 
-        self.mea_data = np.array([MEA_t, MEA], dtype=np.float32).transpose()
-        self.lea_data = np.array([LEA_t, LEA], dtype=np.float32).transpose()
-        self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
-        self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
+        # Storing redundancy for convention with other data that might only have position in the 2nd data slot
+        self.mea_data = np.array([MEA_t, MEA, MEA], dtype=np.float32).transpose()
+        self.lea_data = np.array([LEA_t, LEA, LEA], dtype=np.float32).transpose()
+        self.gc_data = np.array([GC_t, GC_pos, GC], dtype=np.float32).transpose()
+        self.bc_data = np.array([BC_t, BC_pos, BC], dtype=np.float32).transpose()
 
         # Stores the position into a matrix
         self.bc_data_pos = np.array([BC_xpos, BC_pos], dtype=np.float32).transpose()
@@ -201,7 +202,7 @@ class CellTypeDataSet():
 
     def __init__(self, title, data_set, rgb=(1, 1, 1), xyz=(0, 0, 0)):
         # create a Vertex Buffer Object with the specified data
-        self.vbo = glvbo.VBO(data_set)
+        self.vbo = glvbo.VBO(data_set[:, 0:2])
         self.count = data_set.shape[0]
         self.rgb = rgb
         self.xyz = xyz
