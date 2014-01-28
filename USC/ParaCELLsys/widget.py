@@ -350,7 +350,7 @@ class GLUIWidget(UI, GLPlotWidget):
     """
 
     def __init__(self, viewer, parent=None):
-        GLPlotWidget.__init__(self, viewer, parent=None)
+        GLPlotWidget.__init__(self, viewer, parent=parent)
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
