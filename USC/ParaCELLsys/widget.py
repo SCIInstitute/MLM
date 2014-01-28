@@ -36,36 +36,34 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
 
         # Makes the widget size not resizable
         self.setFixedSize(self.width, self.height)
-        self.boxy = QtGui.QVBoxLayout(self.central)
 
-        self.widgets = []
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
-        if mea_lea_tile is not None:
-            mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
-            mea_lea_label.setAutoFillBackground(True)
-            mea_lea_widget = GLUIWidget(mea_lea_tile)
-            self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
-            self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
-            self.widgets.append(mea_lea_widget)
-        if gc_tile is not None:
-            gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
-            gc_label.setAutoFillBackground(True)
-            gc_widget = GLUIWidget(gc_tile)
-            self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
-            self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
-            self.widgets.append(gc_widget)
-        if bc_tile is not None:
-            bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
-            bc_label.setAutoFillBackground(True)
-            bc_widget = GLUIWidget(bc_tile)
-            self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
-            self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
-            self.widgets.append(bc_widget)
+        mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
+        mea_lea_label.setAutoFillBackground(True)
+        mea_lea_widget = GLUIWidget(mea_lea_tile)
+        gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
+        gc_label.setAutoFillBackground(True)
+        gc_widget = GLUIWidget(gc_tile)
+        bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
+        bc_label.setAutoFillBackground(True)
+        bc_widget = GLUIWidget(bc_tile)
+
+        self.widgets = (mea_lea_widget, gc_widget, bc_widget)
 
         #self.grid = QtGui.QGridLayout(self.central)
         #self.grid.setSpacing(0)
         #self.grid.setRowMinimumHeight(0, 1)
+
+        self.boxy = QtGui.QVBoxLayout(self.central)
+
+        # add all the plot widgets and labels to the layout
+        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
+        self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
+        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
+        self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
+        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
+        self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
 
         self.statusBar().showMessage("Ready")
 
