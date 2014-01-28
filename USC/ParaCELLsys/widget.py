@@ -7,6 +7,7 @@ from rubberband import RectRubberband
 from tools import ToolQB, Callbacks, Tools
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
+import OpenGL.arrays.vbo as glvbo
 import numpy as np
 from ui import UI
 import threading
@@ -28,41 +29,43 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
     width = 800
     height = 600
 
-    def __init__(self, mea_lea_tile, gc_tile, bc_tile):
+    def __init__(self, mea_lea_tile, gc_tile, bc_tile, cell_hierarchy={}):
         super(GuiCellPlot, self).__init__()
         threading.Thread.__init__(self)
         self.central = QWidget(self)
 
         # Makes the widget size not resizable
         self.setFixedSize(self.width, self.height)
+        self.boxy = QtGui.QVBoxLayout(self.central)
 
+        self.widgets = []
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
-        mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
-        mea_lea_label.setAutoFillBackground(True)
-        mea_lea_widget = GLUIWidget(mea_lea_tile)
-        gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
-        gc_label.setAutoFillBackground(True)
-        gc_widget = GLUIWidget(gc_tile)
-        bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
-        bc_label.setAutoFillBackground(True)
-        bc_widget = GLUIWidget(bc_tile)
-
-        self.widgets = (mea_lea_widget, gc_widget, bc_widget)
+        if mea_lea_tile is not None:
+            mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
+            mea_lea_label.setAutoFillBackground(True)
+            mea_lea_widget = GLUIWidget(mea_lea_tile)
+            self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
+            self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
+            self.widgets.append(mea_lea_widget)
+        if gc_tile is not None:
+            gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
+            gc_label.setAutoFillBackground(True)
+            gc_widget = GLUIWidget(gc_tile)
+            self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
+            self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
+            self.widgets.append(gc_widget)
+        if bc_tile is not None:
+            bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
+            bc_label.setAutoFillBackground(True)
+            bc_widget = GLUIWidget(bc_tile)
+            self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
+            self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
+            self.widgets.append(bc_widget)
 
         #self.grid = QtGui.QGridLayout(self.central)
         #self.grid.setSpacing(0)
         #self.grid.setRowMinimumHeight(0, 1)
-
-        self.boxy = QtGui.QVBoxLayout(self.central)
-
-        # add all the plot widgets and labels to the layout
-        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
-        self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
-        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
-        self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
-        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
-        self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
 
         self.statusBar().showMessage("Ready")
 
@@ -73,8 +76,10 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         self.program_active = True
         self.start()
 
-    def test(self):
-        print "Hello"
+        self.vbos = []
+        for cell_num in cell_hierarchy:
+            data = np.array(cell_hierarchy[cell_num], dtype=np.float32)
+            self.vbos.append(glvbo.VBO(data))
 
     def keyPressEvent(self, QKeyEvent):
         # 67 = 'c'
@@ -111,6 +116,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     """
     Anything here is just for the plot objects
     """
+    test = 0
 
     def __init__(self, viewer, parent=None):
         QGLWidget.__init__(self)
@@ -287,15 +293,15 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             gl.glPushMatrix()
             dSet.getTranslation()
             # bind the VBO
-            dSet.getVBO().bind()
+            vbo = dSet.getVBO()
+            vbo.bind()
             # tell OpenGL that the VBO contains an array of vertices
             gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
             # these vertices contain 2 single precision coordinates
-            gl.glVertexPointer(2, gl.GL_FLOAT, 0, dSet.getVBO())
+            gl.glVertexPointer(2, gl.GL_FLOAT, 0, vbo)
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
             gl.glPopMatrix()
-            #gl.glUseProgram(0)
 
         if self.mouse_pos is not None and not self.rubberband.isVisible():
             self.draw_kd_tree_point()

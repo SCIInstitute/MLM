@@ -1,9 +1,8 @@
 import OpenGL.GL as gl
 import OpenGL.arrays.vbo as glvbo
 import os
-import cPickle, pickle
+import cPickle
 import numpy as np
-import time
 
 __author__ = 'mavinm'
 
@@ -28,6 +27,8 @@ class ParseCellData():
         self.bc_data = None
         self.bc_data_pos = None
         self.gc_data_pos = None
+        self.cell_hierarchy = {}
+        self.prev_cell = -1
 
         self.num_cells = num_cells
         self.t_start = t_start
@@ -149,6 +150,7 @@ class ParseParallelCellData(ParseCellData):
                         if self.t_start <= spikeData[ii][jj] <= self.t_stop:
                             MEA.append(float(ii))
                             MEA_t.append(float(spikeData[ii][jj]))
+                            # self.add_spiketime_to_cell_hierarchy(ii, float(ii), float(spikeData[ii][jj]))
             # Lateral Entorhinal Area
             elif self.num_cells[0] <= ii < sum(self.num_cells[0:2]):
                 if (ii % 1) == 0:
@@ -156,6 +158,7 @@ class ParseParallelCellData(ParseCellData):
                         if self.t_start <= spikeData[ii][jj] <= self.t_stop:
                             LEA.append(ii)
                             LEA_t.append(spikeData[ii][jj])
+                            # self.add_spiketime_to_cell_hierarchy(ii, float(ii), float(spikeData[ii][jj]))
             # Granule Cell
             elif self.num_cells[0] + self.num_cells[1] <= ii < sum(self.num_cells[0:3]):
                 if (ii % 1) == 0:
@@ -165,6 +168,7 @@ class ParseParallelCellData(ParseCellData):
                             GC_t.append(spikeData[ii][jj])
                             GC_pos.append(places[ii][1])
                             GC_xpos.append(places[ii][0])
+                            # self.add_spiketime_to_cell_hierarchy(ii, float(spikeData[ii][jj]), float(places[ii][1]))
 
             # Basket Cell
             elif ii >= sum(self.num_cells[0:3]):
@@ -175,18 +179,27 @@ class ParseParallelCellData(ParseCellData):
                             BC_t.append(spikeData[ii][jj])
                             BC_pos.append(BCLocs[ii][1])
                             BC_xpos.append(BCLocs[ii][0])
+                            self.add_spiketime_to_cell_hierarchy(ii, float(spikeData[ii][jj]), float(BCLocs[ii][1]))
 
         # Storing redundancy for convention with other data that might only have position in the 2nd data slot
-        self.mea_data = np.array([MEA_t, MEA, MEA], dtype=np.float32).transpose()
-        self.lea_data = np.array([LEA_t, LEA, LEA], dtype=np.float32).transpose()
-        self.gc_data = np.array([GC_t, GC_pos, GC], dtype=np.float32).transpose()
-        self.bc_data = np.array([BC_t, BC_pos, BC], dtype=np.float32).transpose()
+        self.mea_data = np.array([MEA_t, MEA], dtype=np.float32).transpose()
+        self.lea_data = np.array([LEA_t, LEA], dtype=np.float32).transpose()
+        self.gc_data = np.array([GC_t, GC_pos], dtype=np.float32).transpose()
+        self.bc_data = np.array([BC_t, BC_pos], dtype=np.float32).transpose()
 
         # Stores the position into a matrix
         self.bc_data_pos = np.array([BC_xpos, BC_pos], dtype=np.float32).transpose()
         self.gc_data_pos = np.array([GC_xpos, GC_pos], dtype=np.float32).transpose()
 
         self.save()
+
+    def add_spiketime_to_cell_hierarchy(self, cell_num, x_data, y_data):
+        # Creates a spot in the hierarchy if it doesn't exist for this code
+        if self.prev_cell != cell_num:
+            self.cell_hierarchy[cell_num] = []
+            self.prev_cell = cell_num
+
+        self.cell_hierarchy[cell_num].append([x_data, y_data])
 
 
 class CellTypeDataSet():

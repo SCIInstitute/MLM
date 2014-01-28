@@ -24,19 +24,20 @@ print str(bc_data.shape[0]) + " Basket cell spikes."
 
 app = QtGui.QApplication(sys.argv)
 
-mea_set = CellTypeDataSet("Cell # (MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
-lea_set = CellTypeDataSet("LEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
-gc_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
+# mea_set = CellTypeDataSet(data.cell_hierarchy, "Cell # (MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
+# lea_set = CellTypeDataSet(data.cell_hierarchy, "LEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
+# gc_set = CellTypeDataSet(data.cell_hierarchy, "GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
 bc_set = CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
 
 # These are the individual tiles that will have information about the dataset
-mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
-gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
+# mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
+# gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
 bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
 # should have one window, but three GuiCellPlots in it, or
 # have GuiCellPlot be a singleton class with substructures for each plot
-window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
+# window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile)
+window = GuiCellPlot(None, None, bc_tile, cell_hierarchy=data.cell_hierarchy)
 window.show()
 
 print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
