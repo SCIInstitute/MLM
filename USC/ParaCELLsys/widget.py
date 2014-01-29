@@ -15,9 +15,6 @@ import thread
 import time
 
 __author__ = 'Mavin Martin'
-#TODO mavinm - Get KD Tree Scaling working correctly for self.ratio
-#TODO mavinm - Get KD Tree working in the zooming-out feature with the right click zoom-out control
-#TODO mavinm - Get KD Tree working for resizing window
 
 
 class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
