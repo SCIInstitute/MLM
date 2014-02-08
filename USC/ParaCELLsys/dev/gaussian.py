@@ -24,8 +24,12 @@ class GridGaussian():
 
         self.pixels = np.zeros(split)
 
-        self.evaluate_pixels(array, sigma)
+        self.gaussian_evaluate_pixels(array, sigma)
 
+    def save_image(self):
+        rescaled = (255.0 / self.pixels.max() * (self.pixels - self.pixels.min())).astype(np.uint8)
+        im = Image.fromarray(rescaled)
+        im.show()
 
     def gaussian_evaluate_pixels(self, array, sigma):
         gaussian_bottom = (2 * math.pi * sigma ** 2)
@@ -43,5 +47,6 @@ class GridGaussian():
         return val_x, val_y
 
 
-a = np.array([[0, 0], [499, 499]])
-GridGaussian(a, (-3, 4, -2, 5), (2, 2), 1)
+a = np.array([[-3, 0], [2, 5]])
+g = GridGaussian(a, (-3, 4, -2, 5), (200, 200), 1)
+g.save_image()
