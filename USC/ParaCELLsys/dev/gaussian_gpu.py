@@ -42,9 +42,9 @@ class GridGaussian():
         im.show()
 
 
-a = np.array([[-3, 0], [2, 5], [0, 1]], dtype=np.float32)
+a = np.array([[-3, 0], [2, 5]], dtype=np.float32)
 start = timer()
-g = GridGaussian(a, (-3, 4, -2, 5), (400, 400), 1)
+g = GridGaussian(a, (-3, 4, -2, 5), (500, 500), 1)
 dt = timer() - start
 print "Gaussian Blur created on GPU in %f s" % dt
 g.save_image()
