@@ -296,7 +296,10 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             gl.glVertexPointer(2, gl.GL_FLOAT, 0, vbo)
             # draw "count" points from the VBO
             gl.glDrawArrays(gl.GL_POINTS, 0, dSet.count)
+            vbo.unbind()
             gl.glPopMatrix()
+
+        gl.glDisable(gl.GL_BLEND)
 
         if self.mouse_pos is not None and not self.rubberband.isVisible():
             self.draw_kd_tree_point()
@@ -304,6 +307,10 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         if self.rubberband.isVisible():
             self.rubberband.restrictBoundaries(self.width, self.height)
             self.rubberband.draw()
+
+        gl.glDisable(gl.GL_BLEND)
+        self.qglColor(QtCore.Qt.black)
+        self.renderText(200, 5, 0.0, "Multisampling disabled", self.font())
 
         gl.glFlush()
 

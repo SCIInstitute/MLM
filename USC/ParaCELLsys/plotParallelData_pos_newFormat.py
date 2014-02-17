@@ -36,9 +36,9 @@ mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2]
 gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
 bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
-g = GridGaussian(bc_data, bc_tile.get_View().view(), (100, 100), 1)
-g.save_image()
-print "Completed showing data now"
+# g = GridGaussian(bc_data, bc_tile.get_View().view(), (100, 100), 1)
+# g.save_image()
+# print "Completed showing data now"
 
 # should have one window, but three GuiCellPlots in it, or
 # have GuiCellPlot be a singleton class with substructures for each plot
