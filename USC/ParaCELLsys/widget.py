@@ -55,12 +55,12 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         self.boxy = QtGui.QVBoxLayout(self.central)
 
         # add all the plot widgets and labels to the layout
-        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)       # , 0, 0)
-        self.boxy.addWidget(bc_widget, 2)                            # , 1, 0)
-        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)       # , 2, 0)
-        self.boxy.addWidget(gc_widget, 8)                            # , 3, 0, 6, 0)  # row x, col y, w row, h col
+        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)  # , 0, 0)
+        self.boxy.addWidget(bc_widget, 2)  # , 1, 0)
+        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)  # , 2, 0)
+        self.boxy.addWidget(gc_widget, 8)  # , 3, 0, 6, 0)  # row x, col y, w row, h col
         self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
-        self.boxy.addWidget(mea_lea_widget, 3)                       # , 9, 0, 2, 0)
+        self.boxy.addWidget(mea_lea_widget, 3)  # , 9, 0, 2, 0)
 
         self.statusBar().showMessage("Ready")
 
@@ -142,8 +142,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.lock = thread.allocate_lock()
         self.parent = parent
 
-        # draw axes
-
         # Starts the thread of anything inside of the run() method
         self.start()
 
@@ -198,7 +196,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         # paint within the whole window
         gl.glViewport(0, 0, self.width, self.height)
         # set orthographic projection (2D only)
-        gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
         self.prevView = [viewArray[0], viewArray[1], viewArray[2], viewArray[3]]
@@ -217,8 +214,29 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.setOrtho((l, r, b, t))
 
     # flesh this out- want to have it dynamically resize
-    def draw_axes(self, axis1, axis2):
-        pass
+    def draw_axes(self):
+        gl.glLineWidth(2.5)
+        self.qglColor(QtCore.Qt.black)
+        left, bottom, z_ = glu.gluUnProject(0, 0, 0)
+        right, top, z_ = glu.gluUnProject(self.width, self.height, 0)
+        gl.glBegin(gl.GL_LINES)
+        # Bottom
+        gl.glVertex3f(left, bottom, 0)
+        gl.glVertex3f(right, bottom, 0)
+        # Right
+        gl.glVertex3f(right, bottom, 0)
+        gl.glVertex3f(right, top, 0)
+        # Top
+        gl.glVertex3f(left, top, 0)
+        gl.glVertex3f(right, top, 0)
+        # Left
+        gl.glVertex3f(left, bottom, 0)
+        gl.glVertex3f(left, top, 0)
+
+        gl.glEnd()
+
+        x_, y_, z_ = glu.gluUnProject(0, 50, 0)
+        self.renderText(x_, y_, 0.0, "Multisampling disabled", self.font())
 
     def initializeGL(self):
         """
@@ -281,7 +299,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
+        gl.glMatrixMode(gl.GL_MODELVIEW)
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
             dSet.getColor(self.alpha)
@@ -309,8 +327,8 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             self.rubberband.draw()
 
         gl.glDisable(gl.GL_BLEND)
-        self.qglColor(QtCore.Qt.black)
-        self.renderText(200, 5, 0.0, "Multisampling disabled", self.font())
+
+        self.draw_axes()
 
         gl.glFlush()
 

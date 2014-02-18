@@ -22,9 +22,9 @@ class Viewer():
             raise KeyError("You did not meet the Viewer() initialization criteria")
 
     def __initializeView(self, view):
-        self.set_view((view[0], view[1], view[2], view[3]))
+        self.set_view((float(view[0]), float(view[1]), float(view[2]), float(view[3])))
 
-        self.orig_view = (view[0], view[1], view[2], view[3])
+        self.orig_view = (float(view[0]), float(view[1]), float(view[2]), float(view[3]))
 
     def view(self):
         return self.left, self.right, self.bottom, self.top
@@ -42,10 +42,10 @@ class Viewer():
         return self.right, self.bottom
 
     def set_view(self, view):
-        self.left = view[0]
-        self.right = view[1]
-        self.bottom = view[2]
-        self.top = view[3]
+        self.left = float(view[0])
+        self.right = float(view[1])
+        self.bottom = float(view[2])
+        self.top = float(view[3])
 
     def width(self):
         return self.right - self.left
