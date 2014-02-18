@@ -232,11 +232,29 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         # Left
         gl.glVertex3f(left, bottom, 0)
         gl.glVertex3f(left, top, 0)
-
         gl.glEnd()
+
+        self.draw_axes_ticks(left, right, bottom, top, 10, 5)
 
         x_, y_, z_ = glu.gluUnProject(0, 50, 0)
         self.renderText(x_, y_, 0.0, "Multisampling disabled", self.font())
+
+    def draw_axes_ticks(self, left, right, bottom, top, num_ticks_x, num_ticks_y):
+        tick_width = 5
+        x_, y_, z_ = glu.gluUnProject(tick_width, tick_width, 0)
+        dx = (right - left) / (num_ticks_x - 1)
+        dy = (top - bottom) / (num_ticks_y - 1)
+
+        gl.glLineWidth(1)
+        gl.glBegin(gl.GL_LINES)
+        # Draw number ticks in x direction
+        for x in range(num_ticks_x):
+            gl.glVertex3f(x * dx + left, bottom, 0)
+            gl.glVertex3f(x * dx + left, y_, 0)
+        for y in range(num_ticks_y):
+            gl.glVertex3f(left, y * dy + bottom, 0)
+            gl.glVertex3f(x_, y * dy + bottom, 0)
+        gl.glEnd()
 
     def initializeGL(self):
         """
