@@ -38,13 +38,13 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         # We want these as separate blocks so we can have axis and things
         mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
         mea_lea_label.setAutoFillBackground(True)
-        mea_lea_widget = GLUIWidget(mea_lea_tile)
+        mea_lea_widget = FigureDiagramWidget(mea_lea_tile)
         gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
         gc_label.setAutoFillBackground(True)
-        gc_widget = GLUIWidget(gc_tile)
+        gc_widget = FigureDiagramWidget(gc_tile)
         bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
         bc_label.setAutoFillBackground(True)
-        bc_widget = GLUIWidget(bc_tile)
+        bc_widget = FigureDiagramWidget(bc_tile)
 
         self.widgets = (mea_lea_widget, gc_widget, bc_widget)
 
@@ -96,7 +96,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         while self.program_active:
             processing = False
             for widget in self.widgets:
-                if not widget.kd_tree_active:
+                if not widget.canvas.kd_tree_active:
                     processing = True
                     break
             if processing:
@@ -111,7 +111,9 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     """
     Anything here is just for the plot objects
     """
-    test = 0
+
+    x_ticks = 10
+    y_ticks = 5
 
     def __init__(self, viewer, parent=None):
         QGLWidget.__init__(self)
@@ -234,10 +236,10 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glVertex3f(left, top, 0)
         gl.glEnd()
 
-        self.draw_axes_ticks(left, right, bottom, top, 10, 5)
+        self.draw_axes_ticks(left, right, bottom, top, self.x_ticks, self.y_ticks)
 
         x_, y_, z_ = glu.gluUnProject(0, 50, 0)
-        self.renderText(x_, y_, 0.0, "Multisampling disabled", self.font())
+        # self.renderText(x_, y_, 0.0, "Multisampling disabled", self.font())
 
     def draw_axes_ticks(self, left, right, bottom, top, num_ticks_x, num_ticks_y):
         tick_width = 5
@@ -463,3 +465,43 @@ class GLUIWidget(UI, GLPlotWidget):
 
         GLPlotWidget.mouseMoveEvent(self, event)
 
+
+class FigureDiagramWidget(QWidget):
+    def __init__(self, viewer):
+        QWidget.__init__(self)
+
+        self.height = 0
+        self.width = 0
+        self.padding_left = 40
+        self.padding_bottom = 20
+
+        boxy = QtGui.QVBoxLayout(self)
+        self.setLayout(boxy)
+        # self.setFixedSize(self.width, self.height)
+        self.canvas = GLUIWidget(viewer, parent=self)
+        self.layout().addWidget(self.canvas)
+        self.layout().setContentsMargins(0, 0, 200, self.padding_bottom)
+        self.metrics = QtGui.QFontMetrics(self.font())
+
+    def paintEvent(self, QPaintEvent):
+        print "Painting"
+        self.height = self.canvas.height
+        self.width = self.canvas.width
+        painter = QtGui.QPainter()
+        view = self.canvas.view.view()
+        painter.begin(self)
+        self.drawXLabels(painter, view[0], view[1], self.canvas.x_ticks)
+        painter.end()
+
+    def drawXLabels(self, painter, start, end, num_ticks):
+        for i in range(num_ticks):
+            value = i * (end - start) / (num_ticks - 1)
+            label = str(round(value, 2))
+            label_width = self.metrics.width(label)
+            pos = i * self.width / (num_ticks - 1)
+            print label_width
+            painter.drawText(pos, self.height, label_width, 100, 0, label)
+
+    def closeEvent(self, QCloseEvent):
+        self.canvas.closeEvent(QCloseEvent)
+        QWidget.closeEvent(self, QCloseEvent)
