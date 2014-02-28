@@ -112,9 +112,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     Anything here is just for the plot objects
     """
 
-    x_ticks = 10
-    y_ticks = 5
-
     def __init__(self, viewer, parent=None):
         QGLWidget.__init__(self)
         threading.Thread.__init__(self)
@@ -123,6 +120,9 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.mouse_origin = 0
         self.alpha = .2
         self.mouse_pos = None
+
+        self.x_ticks = 0
+        self.y_ticks = 0
 
         self.view = viewer.get_View()
         self.data_sets = viewer.get_Data()
@@ -358,6 +358,10 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         """
         # update the window size
         self.width, self.height = width, height
+        self.x_ticks = int(self.width / 50)
+        self.y_ticks = int(self.height / 14)
+        if self.y_ticks > 6:
+            self.y_ticks = int(self.y_ticks / 2)
         self.setOrtho(self.view.view())
         print "Resizing"
         QGLWidget.resizeGL(self, width, height)
@@ -472,7 +476,7 @@ class FigureDiagramWidget(QWidget):
 
         self.height = 0
         self.width = 0
-        self.padding_left = 40
+        self.padding_left = 60
         self.padding_bottom = 20
 
         boxy = QtGui.QVBoxLayout(self)
@@ -480,8 +484,8 @@ class FigureDiagramWidget(QWidget):
         # self.setFixedSize(self.width, self.height)
         self.canvas = GLUIWidget(viewer, parent=self)
         self.layout().addWidget(self.canvas)
-        self.layout().setContentsMargins(0, 0, 200, self.padding_bottom)
         self.metrics = QtGui.QFontMetrics(self.font())
+        self.layout().setContentsMargins(self.padding_left, self.metrics.height() / 2, 30, self.padding_bottom)
 
     def paintEvent(self, QPaintEvent):
         print "Painting"
@@ -491,7 +495,16 @@ class FigureDiagramWidget(QWidget):
         view = self.canvas.view.view()
         painter.begin(self)
         self.drawXLabels(painter, view[0], view[1], self.canvas.x_ticks)
+        self.drawYLabels(painter, view[2], view[3], self.canvas.y_ticks)
         painter.end()
+
+    def drawYLabels(self, painter, start, end, num_ticks):
+        for i in range(num_ticks):
+            value = i * (end - start) / (num_ticks - 1)
+            label = str(round(value, 2))
+            label_width = self.metrics.width(label)
+            pos = i * self.height / (num_ticks - 1)
+            painter.drawText(self.padding_left - label_width - 5, self.height - pos, label_width, 100, 0, label)
 
     def drawXLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
@@ -499,8 +512,7 @@ class FigureDiagramWidget(QWidget):
             label = str(round(value, 2))
             label_width = self.metrics.width(label)
             pos = i * self.width / (num_ticks - 1)
-            print label_width
-            painter.drawText(pos, self.height, label_width, 100, 0, label)
+            painter.drawText(pos - label_width / 2 + self.padding_left, self.height + self.metrics.height() + 10, label)
 
     def closeEvent(self, QCloseEvent):
         self.canvas.closeEvent(QCloseEvent)
