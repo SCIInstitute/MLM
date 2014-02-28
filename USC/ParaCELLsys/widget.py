@@ -498,10 +498,16 @@ class FigureDiagramWidget(QWidget):
         self.drawYLabels(painter, view[2], view[3], self.canvas.y_ticks)
         painter.end()
 
+    def convertLabel(self, value):
+        value = round(value, 2)
+        if (value * 100) % 100 == 0:
+            value = int(value)
+        return str(value)
+
     def drawYLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
             value = i * (end - start) / (num_ticks - 1)
-            label = str(round(value, 2))
+            label = self.convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.height / (num_ticks - 1)
             painter.drawText(self.padding_left - label_width - 5, self.height - pos, label_width, 100, 0, label)
@@ -509,7 +515,7 @@ class FigureDiagramWidget(QWidget):
     def drawXLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
             value = i * (end - start) / (num_ticks - 1)
-            label = str(round(value, 2))
+            label = self.convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.width / (num_ticks - 1)
             painter.drawText(pos - label_width / 2 + self.padding_left, self.height + self.metrics.height() + 10, label)
