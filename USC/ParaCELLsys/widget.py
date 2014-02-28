@@ -487,7 +487,6 @@ class FigureDiagramWidget(QWidget):
         self.layout().setContentsMargins(self.padding_left, self.metrics.height() / 2, 30, self.padding_bottom)
 
     def paintEvent(self, QPaintEvent):
-        print "Painting"
         self.height = self.canvas.height
         self.width = self.canvas.width
         painter = QtGui.QPainter()
@@ -499,7 +498,7 @@ class FigureDiagramWidget(QWidget):
 
     def drawYLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
-            value = i * (end - start) / (num_ticks - 1)
+            value = i * (end - start) / (num_ticks - 1) + start
             label = convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.height / (num_ticks - 1)
@@ -507,7 +506,7 @@ class FigureDiagramWidget(QWidget):
 
     def drawXLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
-            value = i * (end - start) / (num_ticks - 1)
+            value = i * (end - start) / (num_ticks - 1) + start
             label = convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.width / (num_ticks - 1)
