@@ -54,7 +54,12 @@ class ToolQB():
 
             return callback
 
-    def scale(self, mouse, mouse_release, window_height=None):
+    def scale(self, mouse, mouse_release, window_height=None, view=None):
+
+        if view is not None:
+            self.orig_view_scale = view
+            print view
+
         """
         Scales the window according to movement
         mouse - Mouse Event passed in
@@ -82,14 +87,18 @@ class ToolQB():
                 callback = Callbacks.RESIZE
             self.prev_position_scale = None
             self.anchor_position_scale = None
+            self.orig_view_scale = None
 
             return callback
 
-    def mouse_down(self, mouse, tool, window_height=None):
+    def mouse_down(self, mouse, tool, window_height=None, view=None):
         if tool == Tools.ZOOM_IN:
             self.zoom_in(mouse)
         elif tool == Tools.SCALING:
-            self.scale(mouse, False, window_height)
+            self.scale(mouse, False, window_height, view)
+
+    def get_orig_view_scale(self):
+        return self.orig_view_scale
 
     def mouse_up(self, mouse, tool, parent=None):
         if tool == Tools.ZOOM_IN:
@@ -118,3 +127,4 @@ class ToolQB():
         self.prev_position_rect = None
         self.prev_position_scale = None
         self.anchor_position_scale = None
+        self.orig_view_scale = None

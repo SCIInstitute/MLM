@@ -9,6 +9,10 @@ class Viewer():
     def __init__(self, *args, **kwargs):
 
         num_args = len(args)
+        self.left = 0
+        self.right = 0
+        self.bottom = 0
+        self.top = 0
 
         self.orig_view = None
 
@@ -66,7 +70,7 @@ class Viewer():
     def dataDistance(self):
         left, right, top, bottom = self.unprojectView()
         # Returns distance from bottom-left to top-right
-        return math.hypot(left-right, top-bottom)
+        return math.hypot(left - right, top - bottom)
 
 
 class ViewTile():

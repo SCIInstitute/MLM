@@ -24,7 +24,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
 
     # The default height of the window
     width = 1000
-    height = 700
+    height = 800
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile, cell_hierarchy={}):
         super(GuiCellPlot, self).__init__()
@@ -207,12 +207,15 @@ class GLPlotWidget(QGLWidget, threading.Thread):
     def scaleOrtho(self, delta):
         mouse_pos = self.tool_qb.get_scale_anchor()
         scale = 1 - delta
-        # Normalizes the vector, scales it, then puts it back into world coordinates
-        l = (self.view.left - mouse_pos[0]) * scale + mouse_pos[0]
-        r = (self.view.right - mouse_pos[0]) * scale + mouse_pos[0]
-        t = (self.view.top - mouse_pos[1]) * scale + mouse_pos[1]
-        b = (self.view.bottom - mouse_pos[1]) * scale + mouse_pos[1]
 
+        orig_view_scale = self.tool_qb.get_orig_view_scale()
+        # Normalizes the vector, scales it, then puts it back into world coordinates
+        l = (orig_view_scale[0] - mouse_pos[0]) * scale + mouse_pos[0]
+        r = (orig_view_scale[1] - mouse_pos[0]) * scale + mouse_pos[0]
+        b = (orig_view_scale[2] - mouse_pos[1]) * scale + mouse_pos[1]
+        t = (orig_view_scale[3] - mouse_pos[1]) * scale + mouse_pos[1]
+
+        self.view.set_view((l, r, b, t))
         self.setOrtho((l, r, b, t))
 
     # flesh this out- want to have it dynamically resize
@@ -361,7 +364,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.x_ticks = int(self.width / 80)
         self.y_ticks = int(self.height / 14)
         if self.y_ticks > 6:
-            self.y_ticks = int(self.y_ticks / 2)
+            self.y_ticks = int(self.y_ticks / 1.5)
         self.setOrtho(self.view.view())
         print "Resizing"
         QGLWidget.resizeGL(self, width, height)
@@ -408,7 +411,7 @@ class GLUIWidget(UI, GLPlotWidget):
         self.tool_qb.mouse_down(event, Tools.ZOOM_IN)
 
     def mousePressEventRight(self, event):
-        self.tool_qb.mouse_down(event, Tools.SCALING, window_height=self.height)
+        self.tool_qb.mouse_down(event, Tools.SCALING, window_height=self.height, view=self.view.view())
 
     def mouseReleaseEventLeft(self, event):
         self.rubberband.hide()
@@ -475,7 +478,7 @@ class FigureDiagramWidget(QWidget):
 
         self.height = 0
         self.width = 0
-        self.padding_left = 60
+        self.padding_left = 70
         self.padding_bottom = 20
 
         boxy = QtGui.QVBoxLayout(self)
