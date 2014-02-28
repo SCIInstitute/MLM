@@ -23,8 +23,8 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
     """
 
     # The default height of the window
-    width = 800
-    height = 600
+    width = 1000
+    height = 700
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile, cell_hierarchy={}):
         super(GuiCellPlot, self).__init__()
@@ -358,7 +358,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         """
         # update the window size
         self.width, self.height = width, height
-        self.x_ticks = int(self.width / 50)
+        self.x_ticks = int(self.width / 80)
         self.y_ticks = int(self.height / 14)
         if self.y_ticks > 6:
             self.y_ticks = int(self.y_ticks / 2)
@@ -422,6 +422,7 @@ class GLUIWidget(UI, GLPlotWidget):
                 QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
             self.kd_tree_active = False
             self.repaint()
+            self.parentWidget().repaint()
         elif callback == Callbacks.CLICK:
             if not self.kd_tree_active:
                 print "Data is still being evaluated, please wait"
@@ -435,20 +436,11 @@ class GLUIWidget(UI, GLPlotWidget):
         callback = self.tool_qb.mouse_up(event, Tools.SCALING)
         if callback == Callbacks.CLICK:
             self.resetToOriginalView()
+            self.parentWidget().repaint()
         else:
-            # See's if the view window is larger than the data window
-            """
-            if self.view.orig_view[0] > self.prevView[0]:
-                self.prevView[0] = self.view.orig_view[0]
-            if self.view.orig_view[1] > self.prevView[1]:
-                self.prevView[1] = self.view.orig_view[1]
-            if self.view.orig_view[2] > self.prevView[2]:
-                self.prevView[2] = self.view.orig_view[2]
-            if self.view.orig_view[3] > self.prevView[3]:
-                self.prevView[3] = self.view.orig_view[3]
-                """
             self.view.set_view(self.prevView)
             self.repaint()
+            self.parentWidget().repaint()
             if callback == Callbacks.CLICK:
                 tree_num, pt_num, distance, x, y = self.find_data_pos()
                 print "Focus Point Number= " + str(pt_num)
@@ -464,10 +456,17 @@ class GLUIWidget(UI, GLPlotWidget):
             distance = self.tool_qb.mouse_move(event, Tools.SCALING)
             delta = distance / float(self.width)
             self.scaleOrtho(delta)
+            self.parentWidget().repaint()
 
         self.repaint()
-
         GLPlotWidget.mouseMoveEvent(self, event)
+
+
+def convertLabel(value):
+    value = round(value, 2)
+    if (value * 100) % 100 == 0:
+        value = int(value)
+    return str(value)
 
 
 class FigureDiagramWidget(QWidget):
@@ -498,16 +497,10 @@ class FigureDiagramWidget(QWidget):
         self.drawYLabels(painter, view[2], view[3], self.canvas.y_ticks)
         painter.end()
 
-    def convertLabel(self, value):
-        value = round(value, 2)
-        if (value * 100) % 100 == 0:
-            value = int(value)
-        return str(value)
-
     def drawYLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
             value = i * (end - start) / (num_ticks - 1)
-            label = self.convertLabel(value)
+            label = convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.height / (num_ticks - 1)
             painter.drawText(self.padding_left - label_width - 5, self.height - pos, label_width, 100, 0, label)
@@ -515,7 +508,7 @@ class FigureDiagramWidget(QWidget):
     def drawXLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
             value = i * (end - start) / (num_ticks - 1)
-            label = self.convertLabel(value)
+            label = convertLabel(value)
             label_width = self.metrics.width(label)
             pos = i * self.width / (num_ticks - 1)
             painter.drawText(pos - label_width / 2 + self.padding_left, self.height + self.metrics.height() + 10, label)
