@@ -25,8 +25,8 @@ print str(bc_data.shape[0]) + " Basket cell spikes."
 app = QtGui.QApplication(sys.argv)
 
 
-mea_set = CellTypeDataSet("Cell # (MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
-lea_set = CellTypeDataSet("LEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
+mea_set = CellTypeDataSet("Cell # \n(MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
+lea_set = CellTypeDataSet("\nLEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
 gc_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
 bc_set = CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
 

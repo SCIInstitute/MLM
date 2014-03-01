@@ -23,7 +23,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
     """
 
     # The default height of the window
-    width = 1000
+    width = 1200
     height = 800
 
     def __init__(self, mea_lea_tile, gc_tile, bc_tile, cell_hierarchy={}):
@@ -36,31 +36,18 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
 
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
-        mea_lea_label = QtGui.QLabel(mea_lea_tile.get_Title(), self)
-        mea_lea_label.setAutoFillBackground(True)
-        mea_lea_widget = FigureDiagramWidget(mea_lea_tile)
-        gc_label = QtGui.QLabel(gc_tile.get_Title(), self)
-        gc_label.setAutoFillBackground(True)
+        mea_lea_widget = FigureDiagramWidget(mea_lea_tile, show_time_title=True)
         gc_widget = FigureDiagramWidget(gc_tile)
-        bc_label = QtGui.QLabel(bc_tile.get_Title(), self)
-        bc_label.setAutoFillBackground(True)
         bc_widget = FigureDiagramWidget(bc_tile)
 
         self.widgets = (mea_lea_widget, gc_widget, bc_widget)
 
-        #self.grid = QtGui.QGridLayout(self.central)
-        #self.grid.setSpacing(0)
-        #self.grid.setRowMinimumHeight(0, 1)
-
         self.boxy = QtGui.QVBoxLayout(self.central)
 
         # add all the plot widgets and labels to the layout
-        self.boxy.addWidget(bc_label, 0, QtCore.Qt.AlignRight)  # , 0, 0)
-        self.boxy.addWidget(bc_widget, 2)  # , 1, 0)
-        self.boxy.addWidget(gc_label, 0, QtCore.Qt.AlignRight)  # , 2, 0)
-        self.boxy.addWidget(gc_widget, 8)  # , 3, 0, 6, 0)  # row x, col y, w row, h col
-        self.boxy.addWidget(mea_lea_label, 0, QtCore.Qt.AlignRight)  # , 8, 0)
-        self.boxy.addWidget(mea_lea_widget, 3)  # , 9, 0, 2, 0)
+        self.boxy.addWidget(bc_widget, 2)
+        self.boxy.addWidget(gc_widget, 8)
+        self.boxy.addWidget(mea_lea_widget, 4)
 
         self.statusBar().showMessage("Ready")
 
@@ -473,20 +460,28 @@ def convertLabel(value):
 
 
 class FigureDiagramWidget(QWidget):
-    def __init__(self, viewer):
+    def __init__(self, viewer, show_time_title=False):
         QWidget.__init__(self)
 
+        self.show_time_title = show_time_title
         self.height = 0
         self.width = 0
-        self.padding_left = 70
-        self.padding_bottom = 20
+        self.padding_left = 90
+        if self.show_time_title:
+            self.padding_bottom = 50
+        else:
+            self.padding_bottom = 20
+
+        self.title_font = QtGui.QFont()
+        self.title_font.setPointSize(10)
 
         boxy = QtGui.QVBoxLayout(self)
         self.setLayout(boxy)
-        # self.setFixedSize(self.width, self.height)
         self.canvas = GLUIWidget(viewer, parent=self)
+        self.title = self.canvas.title
         self.layout().addWidget(self.canvas)
         self.metrics = QtGui.QFontMetrics(self.font())
+        self.title_metrics = QtGui.QFontMetrics(self.title_font)
         self.layout().setContentsMargins(self.padding_left, self.metrics.height() / 2, 30, self.padding_bottom)
 
     def paintEvent(self, QPaintEvent):
@@ -498,6 +493,23 @@ class FigureDiagramWidget(QWidget):
         self.drawXLabels(painter, view[0], view[1], self.canvas.x_ticks)
         self.drawYLabels(painter, view[2], view[3], self.canvas.y_ticks)
         painter.end()
+        self.drawTitle(painter)
+
+    def drawTitle(self, painter):
+        painter.begin(self)
+        painter.setFont(self.title_font)
+        label_width = self.title_metrics.width(self.title)
+        painter.translate(0, (self.height + label_width) / 2)
+        painter.rotate(-90)
+        painter.drawText(0, 0, label_width, 35, QtCore.Qt.TextWordWrap | QtCore.Qt.AlignCenter, self.title)
+        painter.end()
+
+        if self.show_time_title:
+            painter.begin(self)
+            painter.setFont(self.title_font)
+            label = "Time (ms)"
+            painter.drawText((self.width + self.title_metrics.width(label)) / 2, self.height + 50, label)
+            painter.end()
 
     def drawYLabels(self, painter, start, end, num_ticks):
         for i in range(num_ticks):
