@@ -45,13 +45,13 @@ class GpuGridGaussian():
     {
         float gaussian_bottom = (2 * CUDART_PI_F * pow(sigma, 2));
 
-        int idx = threadIdx.x + threadIdx.y * blockDim.x;
+        int idx = threadIdx.y * blockDim.x * gridDim.x + blockIdx.y * blockDim.y * blockDim.x * gridDim.y + (threadIdx.x + blockIdx.x * blockDim.x);
 
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
             float pt_x = pts[pt_num * 2];
             float pt_y = pts[pt_num * 2 + 1];
-            float val_x = map_index_x(threadIdx.x, dx, start_x);
-            float val_y = map_index_y(threadIdx.y, dy, start_y);
+            float val_x = map_index_x(blockIdx.x * blockDim.x + threadIdx.x, dx, start_x);
+            float val_y = map_index_y(blockIdx.y * blockDim.y + threadIdx.y, dy, start_y);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
             grid[idx] += gaussian_top/gaussian_bottom;
         }
@@ -94,14 +94,22 @@ class GpuGridGaussian():
         self.clean_cuda()
 
     def setup_cuda_sizes(self, split):
+        """
+        Sets up the size of the cuda dimensional array
+
+        When larger than 32, only supported when divisible by 32
+        @param split:
+        @return:
+        """
         if split[0] <= 32:
             block_size = (split[0], split[1], 1)
             grid_size = (1, 1, 1)
         else:
-            # TODO - Only handling 64 now
-            # TODO - Needs to be dividable by 32
-            block_size = (split[0]/2, split[1]/2, 1)
-            grid_size = (2, 2, 1)
+            if split[0] % 32 != 0 or split[1] % 32 != 0:
+                raise ValueError("Only supports multiples of 32")
+            size_ = split[0]/32
+            block_size = (32, 32, 1)
+            grid_size = (size_, size_, 1)
         return block_size, grid_size
 
     def save_image(self):
@@ -121,8 +129,11 @@ class GpuGridGaussian():
 
 
 start = time.time()
-a = np.array([[-3, 0], [2, 5], [2, 2]]).astype(np.float32)
-g = GpuGridGaussian(a, (-3, 4, -2, 5), (64, 64), 1)
+num_pts = 1e3
+a = np.random.rand(num_pts).astype(np.float32).reshape(num_pts/2, 2)
+print a
+g = GpuGridGaussian(a, (0, 1, 0, 1), (1024, 1024), .01)
+# g = GpuGridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
 dt = time.time() - start
 print "Gaussian Blur created on GPU in %f s" % dt
 g.save_image()
