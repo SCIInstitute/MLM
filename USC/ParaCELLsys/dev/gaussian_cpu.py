@@ -1,8 +1,9 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import Image
 import math
 from timeit import default_timer as timer
+
+import numpy as np
+import Image
+
 
 __author__ = 'mavinm'
 __date__ = '2/5/14'
@@ -34,9 +35,9 @@ class GridGaussian():
 
     def gaussian_evaluate_pixels(self, array, sigma):
         gaussian_bottom = (2 * math.pi * sigma ** 2)
-        for pt in array:
-            for i in range(0, self.split[0]):
-                for j in range(0, self.split[1]):
+        for i in range(0, self.split[0]):
+            for j in range(0, self.split[1]):
+                for pt in array:
                     val_x, val_y = self.map_index(j, i)
                     gaussian_top = math.exp(
                         -(dist_squared(pt[0], val_x) + dist_squared(pt[1], val_y)) / (2 * sigma ** 2))
@@ -48,8 +49,8 @@ class GridGaussian():
         return val_x, val_y
 
 start = timer()
-a = np.array([[-3, 0], [2, 5]])
-g = GridGaussian(a, (-3, 4, -2, 5), (500, 500), 1)
+a = np.array([[-3, 0], [2, 5], [2, 2]])
+g = GridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
 dt = timer() - start
 print "Gaussian Blur created on CPU in %f s" % dt
 g.save_image()
