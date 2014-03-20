@@ -29,6 +29,7 @@ class GridGaussian():
         self.gaussian_evaluate_pixels(array, sigma)
 
     def save_image(self):
+        print self.pixels
         rescaled = (255.0 / self.pixels.max() * (self.pixels - self.pixels.min())).astype(np.uint8)
         im = Image.fromarray(rescaled)
         im.show()

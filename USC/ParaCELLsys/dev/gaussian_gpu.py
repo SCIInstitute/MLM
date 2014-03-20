@@ -53,7 +53,7 @@ class GpuGridGaussian():
             float val_x = map_index_x(threadIdx.x, dx, start_x);
             float val_y = map_index_x(threadIdx.y, dy, start_y);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
-            grid[idx] = gaussian_top;
+            grid[idx] += gaussian_top/gaussian_bottom;
         }
     }
     """
@@ -62,14 +62,21 @@ class GpuGridGaussian():
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
-        self.init_cuda(pts, split)
+        # Initiates all of cuda stuff
+        self.grid = np.zeros(split).astype(np.float32)
+        self.grid_gpu = cuda.mem_alloc_like(self.grid)
+        cuda.memcpy_htod(self.grid_gpu, self.grid)
+
+        self.pts_gpu = cuda.mem_alloc_like(pts)
+        cuda.memcpy_htod(self.pts_gpu, pts)
 
         kernel = SourceModule(self.cuda_code)
         gpu_gaussian = kernel.get_function("gpu_gaussian")
 
         dx = float((axis[1] - axis[0])) / float(split[0] - 1)
         dy = float((axis[3] - axis[2])) / float(split[1] - 1)
-
+        print self.grid.shape
+        print dy
         gpu_gaussian(self.grid_gpu,  # Grid
                      self.pts_gpu,  # Points
                      np.int32(pts.shape[0]),  # Point Length
@@ -82,22 +89,22 @@ class GpuGridGaussian():
 
         cuda.memcpy_dtoh(self.grid, self.grid_gpu)
 
+        print self.grid
+
         self.clean_cuda()
 
-    def init_cuda(self, pts, split):
-        self.grid = np.zeros(split)
-        self.grid_gpu = cuda.mem_alloc_like(self.grid)
-        cuda.memcpy_htod(self.grid_gpu, self.grid)
-
-        self.pts_gpu = cuda.mem_alloc_like(pts)
-        cuda.memcpy_htod(self.pts_gpu, pts)
-
     def save_image(self):
+        """
+        Saves image to texture
+        """
         rescaled = (255.0 / self.grid.max() * (self.grid - self.grid.min())).astype(np.uint8)
         im = Image.fromarray(rescaled)
         im.show()
 
     def clean_cuda(self):
+        """
+        Cleans up cuda code
+        """
         self.grid_gpu.free()
         self.pts_gpu.free()
 
@@ -106,5 +113,5 @@ start = time.time()
 a = np.array([[-3, 0], [2, 5], [2, 2]]).astype(np.float32)
 g = GpuGridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
 dt = time.time() - start
-print "Gaussian Blur created on CPU in %f s" % dt
+print "Gaussian Blur created on GPU in %f s" % dt
 g.save_image()
