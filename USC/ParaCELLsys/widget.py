@@ -466,7 +466,7 @@ class FigureDiagramWidget(QWidget):
         self.show_time_title = show_time_title
         self.height = 0
         self.width = 0
-        self.padding_left = 90
+        self.padding_left = 100
         if self.show_time_title:
             self.padding_bottom = 50
         else:

@@ -153,16 +153,16 @@ class ParseParallelCellData(ParseCellData):
     def load_data(self):
         #dataDir = "MEA6600-LEA4600-GC100000-BASKET0-t10000topographic_no-b_AHP_sngl_10-02-2012neg"
         #dataDir = "{6600.4600.100000.1000}-t1500.recurInh_02.03.13-d"
-        dataDir = "data"
-        imageName = "./" + dataDir + "/recurInh_i.png"
-        fileName = "./" + dataDir + "/spikeTimes"
+        dataDir = os.path.dirname(os.path.realpath(__file__)) + "/data"
+        imageName = dataDir + "/recurInh_i.png"
+        fileName = dataDir + "/spikeTimes"
 
         f = open(fileName, 'rb')  # using 'rb' for windows
         spikeData = cPickle.load(f)
         f.close()
 
         # Load in locations of the cells
-        f = open("./" + dataDir + "/sharedData.pickle", 'rb')  # using 'rb' for windows
+        f = open(dataDir + "/sharedData.pickle", 'rb')  # using 'rb' for windows
         combinedData = []
         combinedData = cPickle.load(f)
         f.close()
