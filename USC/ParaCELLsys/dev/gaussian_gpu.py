@@ -76,6 +76,8 @@ class GpuGridGaussian():
         dx = float((axis[1] - axis[0])) / float(split[0] - 1)
         dy = float((axis[3] - axis[2])) / float(split[1] - 1)
 
+        block_size, grid_size = self.setup_cuda_sizes(split)
+
         gpu_gaussian(self.grid_gpu,  # Grid
                      self.pts_gpu,  # Points
                      np.int32(pts.shape[0]),  # Point Length
@@ -84,11 +86,23 @@ class GpuGridGaussian():
                      np.float32(axis[0]),  # X Starting Point
                      np.float32(axis[2]),  # Y Starting Point
                      np.float32(sigma),  # Sigma
-                     block=(split[0], split[1], 1))
+                     block=block_size,
+                     grid=grid_size)
 
         cuda.memcpy_dtoh(self.grid, self.grid_gpu)
 
         self.clean_cuda()
+
+    def setup_cuda_sizes(self, split):
+        if split[0] <= 32:
+            block_size = (split[0], split[1], 1)
+            grid_size = (1, 1, 1)
+        else:
+            # TODO - Only handling 64 now
+            # TODO - Needs to be dividable by 32
+            block_size = (split[0]/2, split[1]/2, 1)
+            grid_size = (2, 2, 1)
+        return block_size, grid_size
 
     def save_image(self):
         """
@@ -108,7 +122,7 @@ class GpuGridGaussian():
 
 start = time.time()
 a = np.array([[-3, 0], [2, 5], [2, 2]]).astype(np.float32)
-g = GpuGridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
+g = GpuGridGaussian(a, (-3, 4, -2, 5), (64, 64), 1)
 dt = time.time() - start
 print "Gaussian Blur created on GPU in %f s" % dt
 g.save_image()
