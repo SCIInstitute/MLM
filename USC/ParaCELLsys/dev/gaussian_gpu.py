@@ -48,10 +48,10 @@ class GpuGridGaussian():
         int idx = threadIdx.x + threadIdx.y * blockDim.x;
 
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
-            float pt_x = pts[pt_num] * 2;
-            float pt_y = pts[pt_num] * 2 + 1;
+            float pt_x = pts[pt_num * 2];
+            float pt_y = pts[pt_num * 2 + 1];
             float val_x = map_index_x(threadIdx.x, dx, start_x);
-            float val_y = map_index_x(threadIdx.y, dy, start_y);
+            float val_y = map_index_y(threadIdx.y, dy, start_y);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
             grid[idx] += gaussian_top/gaussian_bottom;
         }
@@ -75,8 +75,7 @@ class GpuGridGaussian():
 
         dx = float((axis[1] - axis[0])) / float(split[0] - 1)
         dy = float((axis[3] - axis[2])) / float(split[1] - 1)
-        print self.grid.shape
-        print dy
+
         gpu_gaussian(self.grid_gpu,  # Grid
                      self.pts_gpu,  # Points
                      np.int32(pts.shape[0]),  # Point Length
@@ -85,11 +84,9 @@ class GpuGridGaussian():
                      np.float32(axis[0]),  # X Starting Point
                      np.float32(axis[2]),  # Y Starting Point
                      np.float32(sigma),  # Sigma
-                     block=(32, 32, 1))
+                     block=(split[0], split[1], 1))
 
         cuda.memcpy_dtoh(self.grid, self.grid_gpu)
-
-        print self.grid
 
         self.clean_cuda()
 
