@@ -1,7 +1,8 @@
 import math
+import os
 
-import Image
 import numpy as np
+
 
 
 # Make sure pycuda.autoinit is initiated
@@ -151,19 +152,24 @@ class GpuGridGaussian():
         return block_size, grid_size
 
     def __cuda_logic_partitions(self):
-        # TODO - 1e5 is not a good number to use.  We should check the CUDA device properties to find a good value dependent on computer
-        return int(math.ceil(self.pts.nbytes/1e5))
+        # TODO - 1e4 is not a good number to use.  We should check the CUDA device properties to find a good value dependent on computer
+        return int(math.ceil(self.pts.nbytes/1e4))
 
-    def save_image(self):
+    def save_image(self, filename):
         """
         Saves image to texture
         """
+        # Create directory 'tmp' if it does not exist
+        dir = filename.split('/')
+        if not os.path.exists(dir[-2]):
+            os.mkdir(dir[-2])
+
+        f = file(filename, "wb")
         self.__compute_sub_gaussian_gpu(self.__cuda_logic_partitions())
+
         cuda.memcpy_dtoh(self.grid, self.grid_gpu)
-        print self.grid
-        rescaled = (255.0 / self.grid.max() * (self.grid - self.grid.min())).astype(np.uint8)
-        im = Image.fromarray(rescaled)
-        im.show()
+        np.save(f, self.grid)
+        f.close()
 
     def clean_cuda(self):
         """

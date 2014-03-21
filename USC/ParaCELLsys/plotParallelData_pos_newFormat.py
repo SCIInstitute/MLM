@@ -38,9 +38,9 @@ gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
 bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
 if COMPUTE_CELL_GAUSSIAN:
-    bc_g = GpuGridGaussian(bc_data, bc_tile.get_View().orig_view, (512, 512), 1)
-    bc_g.save_image()
-    bc_g.clean_cuda()
+    g = GpuGridGaussian(gc_data, gc_tile.get_View().orig_view, (1024, 1024), 1)
+    g.save_image("tmp/gc_data_gaussian.bin")
+    g.clean_cuda()
 
 
 # g = GridGaussian(bc_data, bc_tile.get_View().view(), (100, 100), 1)
