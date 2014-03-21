@@ -1,6 +1,8 @@
-import Image
 import math
+
+import Image
 import numpy as np
+
 
 # Make sure pycuda.autoinit is initiated
 import pycuda.autoinit
@@ -162,16 +164,16 @@ class GpuGridGaussian():
         Cleans up cuda code
         """
         self.grid_gpu.free()
-        # self.pts_gpu.free()
 
 
-start = time.time()
-num_pts = 1e5 + 1
-a = np.random.rand(num_pts * 2).astype(np.float32).reshape(num_pts, 2)
-# a = np.array(range(22)).astype(np.float32).reshape(11, 2)
-g = GpuGridGaussian(a, (0, 1, 0, 1), (512, 512), .01)
-g.save_image()
-g.clean_cuda()
-# g = GpuGridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
-dt = time.time() - start
-print "Gaussian Blur created on GPU in %f s" % dt
+if __name__ == "__main__":
+    start = time.time()
+    num_pts = 1e4 + 1
+    a = np.random.rand(num_pts * 2).astype(np.float32).reshape(num_pts, 2)
+    # a = np.array(range(22)).astype(np.float32).reshape(11, 2)
+    g = GpuGridGaussian(a, (0, 1, 0, 1), (512, 512), .01)
+    g.save_image()
+    g.clean_cuda()
+    # g = GpuGridGaussian(a, (-3, 4, -2, 5), (32, 32), 1)
+    dt = time.time() - start
+    print "Gaussian Blur created on GPU in %f s" % dt
