@@ -1,4 +1,5 @@
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
+from gaussian_gpu import GpuGridGaussian
 
 # My Parameters
 import sys
@@ -35,6 +36,12 @@ bc_set = CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
 mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2])))
 gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
 bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
+
+if COMPUTE_CELL_GAUSSIAN:
+    bc_g = GpuGridGaussian(bc_data, bc_tile.get_View().orig_view, (512, 512), 1)
+    bc_g.save_image()
+    bc_g.clean_cuda()
+
 
 # g = GridGaussian(bc_data, bc_tile.get_View().view(), (100, 100), 1)
 # g.save_image()

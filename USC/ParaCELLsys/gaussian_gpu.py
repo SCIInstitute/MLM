@@ -16,7 +16,7 @@ __date__ = '2/5/14'
 
 
 class GpuGridGaussian():
-    cuda_code = """
+    __cuda_code = """
     #define CUDART_PI_F 3.141592654f
 
     /**
@@ -65,17 +65,22 @@ class GpuGridGaussian():
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
+        if not pts.flags['C_CONTIGUOUS']:
+            pts = np.require(pts, dtype=pts.dtype, requirements=['C'])
+            if not pts.flags['C_CONTIGUOUS']:
+                raise Exception("Points are not contiguous")
+
         self.axis = axis
         self.sigma = sigma
         self.pts = pts
         self.pts_gpu = None
 
         # Initiates all of cuda stuff
-        self.grid = np.zeros(split).astype(np.float32)
+        self.grid = np.zeros(split).astype(pts.dtype)
         self.grid_gpu = cuda.mem_alloc_like(self.grid)
         cuda.memcpy_htod(self.grid_gpu, self.grid)
 
-        kernel = SourceModule(self.cuda_code)
+        kernel = SourceModule(self.__cuda_code)
         self.gpu_gaussian = kernel.get_function("gpu_gaussian")
 
         self.dx = float((axis[1] - axis[0])) / float(split[0] - 1)
@@ -108,6 +113,7 @@ class GpuGridGaussian():
         # Does the correct partitioning
         alloc_size = self.pts.shape[0]/sub_partitions * 2 * self.pts.itemsize
         self.pts_gpu = cuda.mem_alloc(alloc_size)
+        print alloc_size
         for partition in range(sub_partitions):
             sub_pts = self.pts[partition*d_part:(partition+1)*d_part, :]
             self.__compute_guassian_on_pts(sub_pts)
@@ -168,7 +174,7 @@ class GpuGridGaussian():
 
 if __name__ == "__main__":
     start = time.time()
-    num_pts = 1e4 + 1
+    num_pts = 10
     a = np.random.rand(num_pts * 2).astype(np.float32).reshape(num_pts, 2)
     # a = np.array(range(22)).astype(np.float32).reshape(11, 2)
     g = GpuGridGaussian(a, (0, 1, 0, 1), (512, 512), .01)
