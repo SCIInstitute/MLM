@@ -49,8 +49,8 @@ class GridGaussian():
         return val_x, val_y
 
 start = timer()
-a = np.array([[-3, 0], [2, 5], [2, 2]])
-g = GridGaussian(a, (-3, 4, -2, 5), (64, 64), 1)
+a = np.array([[0, 0]])
+g = GridGaussian(a, (-3, 4, -2, 5), (512, 512), 1)
 dt = timer() - start
 print "Gaussian Blur created on CPU in %f s" % dt
 g.save_image()
