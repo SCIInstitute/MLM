@@ -13,8 +13,10 @@ def dist_squared(val1, val2):
     return (val1 - val2) ** 2
 
 
-class GridGaussian():
-
+class CpuGridGaussian():
+    """
+    @deprecated
+    """
     def __init__(self, array, axis, split, sigma):
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
@@ -28,7 +30,7 @@ class GridGaussian():
 
         self.gaussian_evaluate_pixels(array, sigma)
 
-    def save_image(self):
+    def show_image(self):
         rescaled = (255.0 / self.pixels.max() * (self.pixels - self.pixels.min())).astype(np.uint8)
         im = Image.fromarray(rescaled)
         im.show()
@@ -48,9 +50,10 @@ class GridGaussian():
         val_y = y * self.dy + self.axis[2]
         return val_x, val_y
 
-start = timer()
-a = np.array([[0, 0]])
-g = GridGaussian(a, (-3, 4, -2, 5), (512, 512), 1)
-dt = timer() - start
-print "Gaussian Blur created on CPU in %f s" % dt
-g.save_image()
+if __name__ == "__main__":
+    start = timer()
+    a = np.array([[0, 0]])
+    g = CpuGridGaussian(a, (-3, 4, -2, 5), (512, 512), 1)
+    dt = timer() - start
+    print "Gaussian Blur created on CPU in %f s" % dt
+    g.save_image()

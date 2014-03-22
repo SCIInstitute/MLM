@@ -59,38 +59,46 @@ class GpuGridGaussian():
     }
     """
 
-    def __init__(self, pts, axis, split, sigma):
+    def __init__(self, view_tile, split, sigma):
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
-        if not pts.flags['C_CONTIGUOUS']:
-            pts = np.require(pts, dtype=pts.dtype, requirements=['C'])
-            if not pts.flags['C_CONTIGUOUS']:
-                raise Exception("Points are not contiguous")
+        # if not pts.flags['C_CONTIGUOUS']:
+        #     pts = np.require(pts, dtype=pts.dtype, requirements=['C'])
+        #     if not pts.flags['C_CONTIGUOUS']:
+        #         raise Exception("Points are not contiguous")
 
-        self.axis = axis
+        self.view_tile = view_tile
         self.sigma = sigma
-        self.pts = pts
         self.pts_gpu = None
 
         # Initiates all of cuda stuff
-        self.grid = np.zeros(split).astype(pts.dtype)
+        self.grid = np.zeros(split).astype(np.float32)
         self.grid_gpu = cuda.mem_alloc_like(self.grid)
         cuda.memcpy_htod(self.grid_gpu, self.grid)
 
         kernel = SourceModule(self.__cuda_code)
         self.gpu_gaussian = kernel.get_function("gpu_gaussian")
 
-        self.dx = float((axis[1] - axis[0])) / float(split[0] - 1)
-        self.dy = float((axis[3] - axis[2])) / float(split[1] - 1)
+        self.view = self.view_tile.get_View()
+
+        self.dx = float(self.view.right - self.view.left) / float(split[0] - 1)
+        self.dy = float(self.view.top - self.view.bottom) / float(split[1] - 1)
 
         self.grid_size, self.block_size = self.__setup_cuda_sizes(split)
 
-    def __compute_guassian_on_pts(self, pts):
-        cuda.memcpy_htod(self.pts_gpu, pts)
-
+    def __compute_guassian_on_pts(self):
+        view = self.view_tile.get_View()
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
+                left = view.left/self.grid_size[1]*(col+1)
+                right = view.right/self.grid_size[1]*(col+1)
+                bottom = view.bottom/self.grid_size[0]*(row+1)
+                top = view.top/self.grid_size[0]*(row+1)
+                pts = self.view_tile.get_Data()[0].getFilteredDataSet((left, right, bottom, top))
+                self.pts_gpu = cuda.mem_alloc_like(pts)
+                cuda.memcpy_htod(self.pts_gpu, pts)
+
                 self.gpu_gaussian(self.grid_gpu,  # Grid
                                   self.pts_gpu,  # Points
                                   np.int32(col),  # Block Index x
@@ -100,34 +108,12 @@ class GpuGridGaussian():
                                   np.int32(pts.shape[0]),  # Point Length
                                   np.float32(self.dx),  # dx
                                   np.float32(self.dy),  # dy
-                                  np.float32(self.axis[0]),  # X Starting Point
-                                  np.float32(self.axis[2]),  # Y Starting Point
+                                  np.float32(self.view.left),  # X Starting Point
+                                  np.float32(self.view.bottom),  # Y Starting Point
                                   np.float32(self.sigma),  # Sigma
                                   block=self.block_size)
 
-    def __compute_sub_gaussian_gpu(self, sub_partitions):
-        if sub_partitions < 1:
-            raise Exception("You can't have less than 1 partition")
-        elif sub_partitions > self.pts.shape[0]:
-            raise Exception("sub partitions need to be smaller than pts size")
-        # Delta Partitions
-        d_part = self.pts.shape[0]/sub_partitions
-
-        # Does the correct partitioning
-        alloc_size = self.pts.shape[0]/sub_partitions * 2 * self.pts.itemsize
-        self.pts_gpu = cuda.mem_alloc(alloc_size)
-
-        for partition in range(sub_partitions):
-            sub_pts = self.pts[partition*d_part:(partition+1)*d_part, :]
-            self.__compute_guassian_on_pts(sub_pts)
-        self.pts_gpu.free()
-
-        # See's if there is a remainder of points to work with
-        if self.pts.shape[0] % sub_partitions:
-            alloc_size = (self.pts.shape[0] % sub_partitions) * (2 * self.pts.itemsize)
-            self.pts_gpu = cuda.mem_alloc(alloc_size)
-            self.__compute_guassian_on_pts(self.pts[sub_partitions*d_part:, :])
-            self.pts_gpu.free()
+                self.pts_gpu.free()
 
     def __setup_cuda_sizes(self, split):
         """
@@ -153,10 +139,6 @@ class GpuGridGaussian():
             grid_size = (size_, size_)
         return grid_size, block_size
 
-    def __cuda_logic_partitions(self):
-        # TODO - 1e4 is not a good number to use.  We should check the CUDA device properties to find a good value dependent on computer
-        return int(math.ceil(self.pts.nbytes/1e4))
-
     def save_image(self, filename):
         """
         Saves image to texture
@@ -177,7 +159,7 @@ class GpuGridGaussian():
         im.show()
 
     def compute_grid(self):
-        self.__compute_sub_gaussian_gpu(self.__cuda_logic_partitions())
+        self.__compute_guassian_on_pts()
         cuda.memcpy_dtoh(self.grid, self.grid_gpu)
 
     def get_grid_data(self):
