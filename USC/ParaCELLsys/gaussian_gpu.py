@@ -153,7 +153,7 @@ class GpuGridGaussian():
 
     def __cuda_logic_partitions(self):
         # TODO - 1e4 is not a good number to use.  We should check the CUDA device properties to find a good value dependent on computer
-        return int(math.ceil(self.pts.nbytes/5e4))
+        return int(math.ceil(self.pts.nbytes/1e4))
 
     def save_image(self, filename):
         """

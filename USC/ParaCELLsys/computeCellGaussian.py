@@ -30,8 +30,8 @@ if __name__ == "__main__":
     gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
     bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
-    sigma = .2
-    for i in range(1, 6):
+    sigma = 0.02
+    for i in range(1,6):
         g = GpuGridGaussian(bc_data, bc_tile.get_View().orig_view, (1024, 1024), i*sigma)
         g.save_image("tmp/bc_data_gaussian_sigma=" + str(i*sigma) + ".bin")
         g.clean_cuda()
