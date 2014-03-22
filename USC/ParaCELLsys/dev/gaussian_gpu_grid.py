@@ -42,17 +42,17 @@ class GpuGridGaussian():
     /**
      * Computes the grid values of the gaussian
      */
-    __global__ void gpu_gaussian(float *grid, float *pts, int pt_len, float dx, float dy, float start_x, float start_y, float sigma)
+    __global__ void gpu_gaussian(float *grid, float *pts, int blockIdx_x, int blockIdx_y, int gridDim_x, int gridDim_y, int pt_len, float dx, float dy, float start_x, float start_y, float sigma)
     {
         float gaussian_bottom = (2 * CUDART_PI_F * pow(sigma, 2));
 
-        int idx = threadIdx.y * blockDim.x * gridDim.x + blockIdx.y * blockDim.y * blockDim.x * gridDim.y + (threadIdx.x + blockIdx.x * blockDim.x);
+        int idx = threadIdx.y * blockDim.x * gridDim_x + blockIdx_y * blockDim.y * blockDim.x * gridDim_y + (threadIdx.x + blockIdx_x * blockDim.x);
 
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
             float pt_x = pts[pt_num * 2];
             float pt_y = pts[pt_num * 2 + 1];
-            float val_x = map_index_x(blockIdx.x * blockDim.x + threadIdx.x, dx, start_x);
-            float val_y = map_index_y(blockIdx.y * blockDim.y + threadIdx.y, dy, start_y);
+            float val_x = map_index_x(blockIdx_x * blockDim.x + threadIdx.x, dx, start_x);
+            float val_y = map_index_y(blockIdx_y * blockDim.y + threadIdx.y, dy, start_y);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
             grid[idx] += gaussian_top/gaussian_bottom;
         }
@@ -89,15 +89,21 @@ class GpuGridGaussian():
     def __compute_guassian_on_pts(self, pts):
         cuda.memcpy_htod(self.pts_gpu, pts)
 
-        self.gpu_gaussian(self.grid_gpu,  # Grid
-                          self.pts_gpu,  # Points
-                          np.int32(pts.shape[0]),  # Point Length
-                          np.float32(self.dx),  # dx
-                          np.float32(self.dy),  # dy
-                          np.float32(self.axis[0]),  # X Starting Point
-                          np.float32(self.axis[2]),  # Y Starting Point
-                          np.float32(self.sigma),  # Sigma
-                          block=self.block_size)
+        for row in range(self.grid_size[0]):
+            for col in range(self.grid_size[1]):
+                self.gpu_gaussian(self.grid_gpu,  # Grid
+                                  self.pts_gpu,  # Points
+                                  np.int32(col),  # Block Index x
+                                  np.int32(row),  # Block Index y
+                                  np.int32(self.grid_size[0]),  # Grid Dimensions x
+                                  np.int32(self.grid_size[1]),  # Grid Dimensions y
+                                  np.int32(pts.shape[0]),  # Point Length
+                                  np.float32(self.dx),  # dx
+                                  np.float32(self.dy),  # dy
+                                  np.float32(self.axis[0]),  # X Starting Point
+                                  np.float32(self.axis[2]),  # Y Starting Point
+                                  np.float32(self.sigma),  # Sigma
+                                  block=self.block_size)
 
     def __compute_sub_gaussian_gpu(self, sub_partitions):
         if sub_partitions < 1:

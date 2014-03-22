@@ -100,14 +100,56 @@ class TestGpuGridGaussianCompute64x64(TestCase):
         self.new.clean_cuda()
         self.old.clean_cuda()
 
+    def test_shape(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_equal_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.array_equiv(new_data, old_data)
+
     def test_equal_arrays(self):
         new_data = self.new.get_grid_data()
         old_data = self.old.get_grid_data()
         self.new.show_image()
-        self.old.show_image()
         assert np.array_equal(new_data, old_data)
 
     def test_size(self):
         new_data = self.new.get_grid_data()
         assert new_data.shape == self.size
 
+
+class TestGpuGridGaussianCompute128x128(TestCase):
+    def setUp(self):
+        a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
+        self.size = (128, 128)
+        sigma = .1
+        self.new = GpuGridGaussian(a, (0, 1, 0, 1), self.size, sigma)
+        self.new.compute_grid()
+        self.old = GpuGaussianOld(a, (0, 1, 0, 1), self.size, sigma)
+        self.old.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+        self.old.clean_cuda()
+
+    def test_shape(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_equal_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.array_equiv(new_data, old_data)
+
+    def test_equal_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.array_equal(new_data, old_data)
+
+    def test_size(self):
+        new_data = self.new.get_grid_data()
+        assert new_data.shape == self.size
