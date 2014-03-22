@@ -91,10 +91,12 @@ class GpuGridGaussian():
         view = self.view_tile.get_View()
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
-                left = view.left/self.grid_size[1]*(col+1)
-                right = view.right/self.grid_size[1]*(col+1)
-                bottom = view.bottom/self.grid_size[0]*(row+1)
-                top = view.top/self.grid_size[0]*(row+1)
+                dx = (view.right - view.left)/self.grid_size[1]
+                dy = (view.top - view.bottom)/self.grid_size[0]
+                left = dx * col + view.left
+                right = dx * (col + 1) + view.left
+                bottom = dy * row + view.bottom
+                top = dy * (row + 1) + view.bottom
                 pts = self.view_tile.get_Data()[0].getFilteredDataSet((left, right, bottom, top))
                 self.pts_gpu = cuda.mem_alloc_like(pts)
                 cuda.memcpy_htod(self.pts_gpu, pts)

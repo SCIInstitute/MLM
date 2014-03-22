@@ -89,17 +89,16 @@ class TestGpuGridGaussianCompute2x2(TestCase):
         assert old_data.shape == self.size
 
 
-class TestGpuGridGaussianCompute64x64(TestCase):
+class TestGpuGridGaussianCompute32x32(TestCase):
     def setUp(self):
-        # a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
-        a = np.array([[.1, .1], [.9, .9], [0, .9], [.9, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
-        self.grid_size = (64, 64)
-        sigma = .1
+        a = np.array([[3, 3], [5, 5], [3, 3], [5, 5], [4, 4]]).astype(np.float32).reshape(5, 2)
+        self.grid_size = (32, 32)
+        sigma = .07
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
         # These are the individual tiles that will have information about the dataset
-        test_tile = ViewTile((test_set,), (0, 1, 0, 1))
+        test_tile = ViewTile((test_set,), (3, 5, 3, 5))
 
         self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
         self.new.compute_grid()
@@ -118,15 +117,93 @@ class TestGpuGridGaussianCompute64x64(TestCase):
     def test_equiv_arrays(self):
         new_data = self.new.get_grid_data()
         old_data = self.old.get_grid_data()
-        print old_data
-        print new_data
-        assert np.array_equiv(new_data, old_data)
+        assert np.allclose(new_data, old_data)
 
     def test_equal_arrays(self):
         new_data = self.new.get_grid_data()
         old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_size(self):
+        new_data = self.new.get_grid_data()
+        assert new_data.shape == self.grid_size
+
+
+class TestGpuGridGaussianCompute64x64(TestCase):
+    def setUp(self):
+        a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4, 4]]).astype(np.float32).reshape(5, 2)
+        self.grid_size = (64, 64)
+        sigma = .15
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (3, 5, 3, 5))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+        self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
+        self.old.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+        self.old.clean_cuda()
+
+    def test_shape(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_equiv_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_equal_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_size(self):
+        new_data = self.new.get_grid_data()
+        assert new_data.shape == self.grid_size
+
+
+class TestGpuGridGaussianComputeComplex64x64(TestCase):
+    def setUp(self):
+        a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4.1, 4.1]]).astype(np.float32).reshape(5, 2)
+        self.grid_size = (64, 64)
+        sigma = .15
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (3, 5, 3, 5))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+        self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
+        self.old.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+        self.old.clean_cuda()
+
+    def test_shape(self):
         self.new.show_image()
-        assert np.array_equal(new_data, old_data)
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_equiv_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_equal_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
 
     def test_size(self):
         new_data = self.new.get_grid_data()
