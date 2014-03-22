@@ -93,29 +93,33 @@ class GpuGridGaussian():
             for col in range(self.grid_size[1]):
                 dx = (view.right - view.left)/self.grid_size[1]
                 dy = (view.top - view.bottom)/self.grid_size[0]
-                left = dx * col + view.left
-                right = dx * (col + 1) + view.left
-                bottom = dy * row + view.bottom
-                top = dy * (row + 1) + view.bottom
+
+                # 3 * SIGMA give the 95%
+                left = dx * (col - 3 * self.sigma * self.grid.shape[1]/dx) + view.left
+                right = dx * (col + 1 + 3 * self.sigma * self.grid.shape[1]/dx) + view.left
+                bottom = dy * (row - 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
+                top = dy * (row + 1 + 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
                 pts = self.view_tile.get_Data()[0].getFilteredDataSet((left, right, bottom, top))
-                self.pts_gpu = cuda.mem_alloc_like(pts)
-                cuda.memcpy_htod(self.pts_gpu, pts)
 
-                self.gpu_gaussian(self.grid_gpu,  # Grid
-                                  self.pts_gpu,  # Points
-                                  np.int32(col),  # Block Index x
-                                  np.int32(row),  # Block Index y
-                                  np.int32(self.grid_size[0]),  # Grid Dimensions x
-                                  np.int32(self.grid_size[1]),  # Grid Dimensions y
-                                  np.int32(pts.shape[0]),  # Point Length
-                                  np.float32(self.dx),  # dx
-                                  np.float32(self.dy),  # dy
-                                  np.float32(self.view.left),  # X Starting Point
-                                  np.float32(self.view.bottom),  # Y Starting Point
-                                  np.float32(self.sigma),  # Sigma
-                                  block=self.block_size)
+                if len(pts) > 0:
+                    self.pts_gpu = cuda.mem_alloc_like(pts)
+                    cuda.memcpy_htod(self.pts_gpu, pts)
 
-                self.pts_gpu.free()
+                    self.gpu_gaussian(self.grid_gpu,  # Grid
+                                      self.pts_gpu,  # Points
+                                      np.int32(col),  # Block Index x
+                                      np.int32(row),  # Block Index y
+                                      np.int32(self.grid_size[0]),  # Grid Dimensions x
+                                      np.int32(self.grid_size[1]),  # Grid Dimensions y
+                                      np.int32(pts.shape[0]),  # Point Length
+                                      np.float32(self.dx),  # dx
+                                      np.float32(self.dy),  # dy
+                                      np.float32(self.view.left),  # X Starting Point
+                                      np.float32(self.view.bottom),  # Y Starting Point
+                                      np.float32(self.sigma),  # Sigma
+                                      block=self.block_size)
+
+                    self.pts_gpu.free()
 
     def __setup_cuda_sizes(self, split):
         """
