@@ -1,8 +1,5 @@
 import numpy as np
 import Image
-from gaussian_gpu import GpuGridGaussian
-from models import ParseParallelCellData, CellTypeDataSet
-from view import ViewTile
 
 __author__ = 'mavinm'
 __date__ = '3/21/14'

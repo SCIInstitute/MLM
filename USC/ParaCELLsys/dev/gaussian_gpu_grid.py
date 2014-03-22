@@ -13,10 +13,7 @@ __author__ = 'mavinm'
 __date__ = '2/5/14'
 
 
-class GpuGaussianOld():
-    """
-    @deprecated
-    """
+class GpuGridGaussian():
     __cuda_code = """
     #define CUDART_PI_F 3.141592654f
 
@@ -100,9 +97,7 @@ class GpuGaussianOld():
                           np.float32(self.axis[0]),  # X Starting Point
                           np.float32(self.axis[2]),  # Y Starting Point
                           np.float32(self.sigma),  # Sigma
-                          block=self.block_size,
-                          grid=self.grid_size
-        )
+                          block=self.block_size)
 
     def __compute_sub_gaussian_gpu(self, sub_partitions):
         if sub_partitions < 1:
@@ -143,13 +138,13 @@ class GpuGaussianOld():
 
         if split[0] <= max_threads_sr:
             block_size = (split[0], split[1], 1)
-            grid_size = (1, 1, 1)
+            grid_size = (1, 1)
         else:
             if split[0] % max_threads_sr != 0 or split[1] % max_threads_sr != 0:
                 raise ValueError("Only supports multiples of %i" % max_threads_sr)
             size_ = split[0] / max_threads_sr
             block_size = (max_threads_sr, max_threads_sr, 1)
-            grid_size = (size_, size_, 1)
+            grid_size = (size_, size_)
         return grid_size, block_size
 
     def __cuda_logic_partitions(self):
