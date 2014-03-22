@@ -63,11 +63,6 @@ class GpuGridGaussian():
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
-        # if not pts.flags['C_CONTIGUOUS']:
-        #     pts = np.require(pts, dtype=pts.dtype, requirements=['C'])
-        #     if not pts.flags['C_CONTIGUOUS']:
-        #         raise Exception("Points are not contiguous")
-
         self.view_tile = view_tile
         self.sigma = sigma
         self.pts_gpu = None

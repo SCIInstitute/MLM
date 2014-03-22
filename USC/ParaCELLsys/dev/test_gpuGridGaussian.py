@@ -3,7 +3,7 @@ from dev.gaussian_cpu import CpuGridGaussian
 from dev.gaussian_gpu_grid import GpuGridGaussian
 from gaussian_gpu import GpuGaussianOld
 import numpy as np
-from models import CellTypeDataSet
+from models import CellTypeDataSet, ParseParallelCellData
 from view import ViewTile
 
 __author__ = 'mavinm'
@@ -328,9 +328,9 @@ class TestGpuGridGaussianComputeComplex512x512(TestCase):
 
 class TestGpuGridGaussianComputeComplex1024x1024(TestCase):
     def setUp(self):
-        a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4.1, 4.1]]).astype(np.float32).reshape(5, 2)
+        a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4.1, 4.1], [3, 3]]).astype(np.float32).reshape(6, 2)
         self.grid_size = (1024, 1024)
-        sigma = .0002
+        sigma = .2
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -360,6 +360,66 @@ class TestGpuGridGaussianComputeComplex1024x1024(TestCase):
         new_data = self.new.get_grid_data()
         assert new_data.shape == self.grid_size
 
+
+class TestGpuGridGaussianLargeWindowSize(TestCase):
+    def setUp(self):
+        a = np.array([[750, 5], [0, 0], [1500, 0], [1500, 10], [0, 10]]).astype(np.float32).reshape(5, 2)
+        self.grid_size = (1024, 1024)
+        sigma = 20
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (0, 1500, 0, 10))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+        self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
+        self.old.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+        self.old.clean_cuda()
+
+    def test_shape(self):
+        self.new.show_image()
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_alike_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_size(self):
+        new_data = self.new.get_grid_data()
+        assert new_data.shape == self.grid_size
+
+"""
+class TestGpuGridGaussianActualDataSetBC(TestCase):
+    def setUp(self):
+        tstart = 0
+        tstop = 1500
+        numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
+        bc_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_bc_data()
+        self.grid_size = (512, 512)
+        sigma = .02
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", bc_data, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (tstart, tstop, 0, 10))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+
+    def test_view_data(self):
+        self.new.show_image()
+"""
 
 class TestGpuGridGaussianCompute128x128(TestCase):
     def setUp(self):
