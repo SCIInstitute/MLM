@@ -114,7 +114,7 @@ class GpuGridGaussian():
         # Does the correct partitioning
         alloc_size = self.pts.shape[0]/sub_partitions * 2 * self.pts.itemsize
         self.pts_gpu = cuda.mem_alloc(alloc_size)
-        print alloc_size
+
         for partition in range(sub_partitions):
             sub_pts = self.pts[partition*d_part:(partition+1)*d_part, :]
             self.__compute_guassian_on_pts(sub_pts)
@@ -153,7 +153,7 @@ class GpuGridGaussian():
 
     def __cuda_logic_partitions(self):
         # TODO - 1e4 is not a good number to use.  We should check the CUDA device properties to find a good value dependent on computer
-        return int(math.ceil(self.pts.nbytes/1e4))
+        return int(math.ceil(self.pts.nbytes/5e4))
 
     def save_image(self, filename):
         """

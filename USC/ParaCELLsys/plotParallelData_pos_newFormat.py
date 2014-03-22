@@ -37,12 +37,6 @@ mea_lea_tile = ViewTile((mea_set, lea_set), (tstart, tstop, 0, sum(numCells[0:2]
 gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
 bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
-if COMPUTE_CELL_GAUSSIAN:
-    g = GpuGridGaussian(gc_data, gc_tile.get_View().orig_view, (1024, 1024), 1)
-    g.save_image("tmp/gc_data_gaussian.bin")
-    g.clean_cuda()
-
-
 # g = GridGaussian(bc_data, bc_tile.get_View().view(), (100, 100), 1)
 # g.save_image()
 # print "Completed showing data now"
