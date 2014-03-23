@@ -65,6 +65,16 @@ class GpuGridGaussian():
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
+        self.data_sets = view_tile.get_Data()
+        for dset in self.data_sets:
+            data = dset.getDataSet()
+            if not data.flags['C_CONTIGUOUS']:
+                print "NOT CONTIGUOUS, trying to redo the points"
+                data = np.require(data, dtype=data.dtype, requirements=['C'])
+                if not data.flags['C_CONTIGUOUS']:
+                    raise Exception("Points are not contiguous")
+                dset.setDataSet(data)
+
         self.view_tile = view_tile
         self.sigma = sigma
         self.pts_gpu = None
@@ -86,36 +96,38 @@ class GpuGridGaussian():
 
     def __compute_guassian_on_pts(self):
         view = self.view_tile.get_View()
-        _data = np.array(self.view_tile.get_Data()[0].getDataSet(), copy=True)
-        _data[:, 0] = (_data[:, 0] - view.left)/view.width()
-        _data[:, 1] = (_data[:, 1] - view.bottom)/view.height()
 
-        for row in range(self.grid_size[0]):
-            for col in range(self.grid_size[1]):
-                # 3 * SIGMA give the 95%
-                left = 1 / float(self.grid_size[1]) * col - (3 * self.sigma)
-                right = 1 / float(self.grid_size[1]) * (col + 1) + (3 * self.sigma)
-                bottom = 1 / float(self.grid_size[0]) * row - (3 * self.sigma)
-                top = 1 / float(self.grid_size[0]) * (row + 1) + (3 * self.sigma)
-                pts = getFilteredDataSet(_data, (left, right, bottom, top))
+        for dset in self.data_sets:
+            _data = np.array(dset.getDataSet(), copy=True)
+            _data[:, 0] = (_data[:, 0] - view.left)/view.width()
+            _data[:, 1] = (_data[:, 1] - view.bottom)/view.height()
 
-                if len(pts) > 0:
-                    self.pts_gpu = cuda.mem_alloc_like(pts)
-                    cuda.memcpy_htod(self.pts_gpu, pts)
+            for row in range(self.grid_size[0]):
+                for col in range(self.grid_size[1]):
+                    # 3 * SIGMA give the 95%
+                    left = 1 / float(self.grid_size[1]) * col - (3 * self.sigma)
+                    right = 1 / float(self.grid_size[1]) * (col + 1) + (3 * self.sigma)
+                    bottom = 1 / float(self.grid_size[0]) * row - (3 * self.sigma)
+                    top = 1 / float(self.grid_size[0]) * (row + 1) + (3 * self.sigma)
+                    pts = getFilteredDataSet(_data, (left, right, bottom, top))
 
-                    self.gpu_gaussian(self.grid_gpu,  # Grid
-                                      self.pts_gpu,  # Points
-                                      np.int32(col),  # Block Index x
-                                      np.int32(row),  # Block Index y
-                                      np.int32(self.grid_size[0]),  # Grid Dimensions x
-                                      np.int32(self.grid_size[1]),  # Grid Dimensions y
-                                      np.int32(pts.shape[0]),  # Point Length
-                                      np.float32(self.dx),  # dx
-                                      np.float32(self.dy),  # dy
-                                      np.float32(self.sigma),  # Sigma
-                                      block=self.block_size)
+                    if len(pts) > 0:
+                        self.pts_gpu = cuda.mem_alloc_like(pts)
+                        cuda.memcpy_htod(self.pts_gpu, pts)
 
-                    self.pts_gpu.free()
+                        self.gpu_gaussian(self.grid_gpu,  # Grid
+                                          self.pts_gpu,  # Points
+                                          np.int32(col),  # Block Index x
+                                          np.int32(row),  # Block Index y
+                                          np.int32(self.grid_size[0]),  # Grid Dimensions x
+                                          np.int32(self.grid_size[1]),  # Grid Dimensions y
+                                          np.int32(pts.shape[0]),  # Point Length
+                                          np.float32(self.dx),  # dx
+                                          np.float32(self.dy),  # dy
+                                          np.float32(self.sigma),  # Sigma
+                                          block=self.block_size)
+
+                        self.pts_gpu.free()
 
     def __setup_cuda_sizes(self, split):
         """

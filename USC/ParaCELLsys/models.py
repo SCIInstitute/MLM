@@ -283,6 +283,9 @@ class CellTypeDataSet():
     def getDataSet(self):
         return self.data_set
 
+    def setDataSet(self, data):
+        self.data_set = data
+
     def getFilteredDataSet(self, view):
         data = self.data_set[
             (view[0] <= self.data_set[:, 0]) & (self.data_set[:, 0] <= view[1]) &

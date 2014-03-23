@@ -365,7 +365,7 @@ class TestRandomGpuGridGaussianComputeComplex1024x1024(TestCase):
     def setUp(self):
         a = np.array(np.random.random(12)).astype(np.float32).reshape(6, 2)
         self.grid_size = (1024, 1024)
-        sigma = .1
+        sigma = .0005
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -400,7 +400,7 @@ class TestGpuGridGaussianStudyWindowSize(TestCase):
     def setUp(self):
         a = np.array([[750, 5], [0, 0], [1500, 0], [1500, 10], [0, 10], [237, 2], [237, 2], [1234, 7], [400, 3]]).astype(np.float32).reshape(9, 2)
         self.grid_size = (1024, 1024)
-        sigma = .1
+        sigma = .001
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -431,17 +431,40 @@ class TestGpuGridGaussianStudyWindowSize(TestCase):
         assert new_data.shape == self.grid_size
 
 
+class TestGpuGridGaussianActualDataSetMeaLea(TestCase):
+    def setUp(self):
+        tstart = 0
+        tstop = 1500
+        numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
+        mea_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_mea_data()
+        lea_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_lea_data()
+
+        self.grid_size = (1024, 1024)
+        sigma = .02
+
+        mea_set = CellTypeDataSet("MEA", mea_data, rgb=(0, .5, .5))
+        lea_set = CellTypeDataSet("LEA", lea_data, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((mea_set, lea_set,), (tstart, tstop, 0, 10))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+
+    def test_view_data(self):
+        self.new.show_image()
+
+"""
 class TestGpuGridGaussianActualDataSetBC(TestCase):
     def setUp(self):
         tstart = 0
         tstop = 1500
         numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
         bc_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_bc_data()
-        if not bc_data.flags['C_CONTIGUOUS']:
-            print "NOT CONTIGUOUS, trying to redo the points"
-            bc_data = np.require(bc_data, dtype=bc_data.dtype, requirements=['C'])
-            if not bc_data.flags['C_CONTIGUOUS']:
-                raise Exception("Points are not contiguous")
+
         self.grid_size = (1024, 1024)
         sigma = .002
 
@@ -459,6 +482,31 @@ class TestGpuGridGaussianActualDataSetBC(TestCase):
     def test_view_data(self):
         self.new.show_image()
 
+
+class TestGpuGridGaussianActualDataSetGC(TestCase):
+    def setUp(self):
+        tstart = 0
+        tstop = 1500
+        numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
+        gc_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_gc_data()
+
+        self.grid_size = (1024, 1024)
+        sigma = .001
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (tstart, tstop, 0, 10))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+
+    def test_view_data(self):
+        self.new.show_image()
+"""
 
 class TestGpuGridGaussianCompute128x128(TestCase):
     def setUp(self):
