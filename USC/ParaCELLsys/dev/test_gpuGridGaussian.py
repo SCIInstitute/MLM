@@ -365,14 +365,14 @@ class TestGpuGridGaussianLargeWindowSize(TestCase):
     def setUp(self):
         a = np.array([[750, 5], [0, 0], [1500, 0], [1500, 10], [0, 10]]).astype(np.float32).reshape(5, 2)
         self.grid_size = (1024, 1024)
-        sigma = 20
+        sigma = .1
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
         # These are the individual tiles that will have information about the dataset
         test_tile = ViewTile((test_set,), (0, 1500, 0, 10))
 
-        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma, debug=True)
         self.new.compute_grid()
         self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
         self.old.compute_grid()
@@ -382,7 +382,6 @@ class TestGpuGridGaussianLargeWindowSize(TestCase):
         self.old.clean_cuda()
 
     def test_shape(self):
-        self.new.show_image()
         new_data = self.new.get_grid_data()
         old_data = self.old.get_grid_data()
         assert new_data.shape == old_data.shape
@@ -420,6 +419,7 @@ class TestGpuGridGaussianActualDataSetBC(TestCase):
     def test_view_data(self):
         self.new.show_image()
 """
+
 
 class TestGpuGridGaussianCompute128x128(TestCase):
     def setUp(self):

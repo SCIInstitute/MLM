@@ -151,6 +151,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
 
                 _data[:, 0] /= (self.scale_x * self.ratio)
                 _data[:, 1] /= self.scale_y
+                print _data
                 self.kd_tree.append(
                     KDTreeWritable(dset.getTitle(), _data[:, 0:2], leafsize=100, use_cache_data=False).load()
                 )

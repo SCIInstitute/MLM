@@ -7,6 +7,7 @@ from pycuda.compiler import SourceModule
 import pycuda.driver as cuda
 import time
 from convertGaussian2Image import *
+from models import getFilteredDataSet
 
 
 __author__ = 'mavinm'
@@ -28,21 +29,21 @@ class GpuGridGaussian():
     /**
      * Maps the index of the grid cell on the x
      */
-    __device__ float map_index_x(int x, float dx, float start){
-        return x * dx + start;
+    __device__ float map_index_x(int x, float dx){
+        return x * dx;
     }
 
     /**
      * Maps the index of the grid cell on the y
      */
-    __device__ float map_index_y(int y, float dy, float start){
-        return y * dy + start;
+    __device__ float map_index_y(int y, float dy){
+        return y * dy;
     }
 
     /**
      * Computes the grid values of the gaussian
      */
-    __global__ void gpu_gaussian(float *grid, float *pts, int blockIdx_x, int blockIdx_y, int gridDim_x, int gridDim_y, int pt_len, float dx, float dy, float start_x, float start_y, float sigma)
+    __global__ void gpu_gaussian(float *grid, float *pts, int blockIdx_x, int blockIdx_y, int gridDim_x, int gridDim_y, int pt_len, float dx, float dy, float sigma)
     {
         float gaussian_bottom = (2 * CUDART_PI_F * pow(sigma, 2));
 
@@ -51,15 +52,16 @@ class GpuGridGaussian():
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
             float pt_x = pts[pt_num * 2];
             float pt_y = pts[pt_num * 2 + 1];
-            float val_x = map_index_x(blockIdx_x * blockDim.x + threadIdx.x, dx, start_x);
-            float val_y = map_index_y(blockIdx_y * blockDim.y + threadIdx.y, dy, start_y);
+            float val_x = map_index_x(blockIdx_x * blockDim.x + threadIdx.x, dx);
+            float val_y = map_index_y(blockIdx_y * blockDim.y + threadIdx.y, dy);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
             grid[idx] += gaussian_top/gaussian_bottom;
         }
     }
     """
 
-    def __init__(self, view_tile, split, sigma):
+    def __init__(self, view_tile, split, sigma, debug=False):
+        self.debug = debug
         if split[0] < 2 or split[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
@@ -77,25 +79,27 @@ class GpuGridGaussian():
 
         self.view = self.view_tile.get_View()
 
-        self.dx = float(self.view.right - self.view.left) / float(split[0] - 1)
-        self.dy = float(self.view.top - self.view.bottom) / float(split[1] - 1)
+        self.dx = 1 / float(split[0] - 1)
+        self.dy = 1 / float(split[1] - 1)
 
         self.grid_size, self.block_size = self.__setup_cuda_sizes(split)
 
     def __compute_guassian_on_pts(self):
         view = self.view_tile.get_View()
+        _data = np.array(self.view_tile.get_Data()[0].getDataSet(), copy=True)
+        _data[:, 0] = (_data[:, 0] - view.left)/view.width()
+        _data[:, 1] = (_data[:, 1] - view.bottom)/view.height()
+
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
-                dx = (view.right - view.left)/self.grid_size[1]
-                dy = (view.top - view.bottom)/self.grid_size[0]
-
                 # 3 * SIGMA give the 95%
-                left = dx * (col - 3 * self.sigma * self.grid.shape[1]/dx) + view.left
-                right = dx * (col + 1 + 3 * self.sigma * self.grid.shape[1]/dx) + view.left
-                bottom = dy * (row - 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
-                top = dy * (row + 1 + 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
-                pts = self.view_tile.get_Data()[0].getFilteredDataSet((left, right, bottom, top))
-
+                # left = dx * (col - 3 * self.sigma * self.grid.shape[1]/dx) + view.left
+                # right = dx * (col + 1 + 3 * self.sigma * self.grid.shape[1]/dx) + view.left
+                # bottom = dy * (row - 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
+                # top = dy * (row + 1 + 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
+                pts = _data
+                if self.debug:
+                    print len(pts)
                 if len(pts) > 0:
                     self.pts_gpu = cuda.mem_alloc_like(pts)
                     cuda.memcpy_htod(self.pts_gpu, pts)
@@ -109,8 +113,6 @@ class GpuGridGaussian():
                                       np.int32(pts.shape[0]),  # Point Length
                                       np.float32(self.dx),  # dx
                                       np.float32(self.dy),  # dy
-                                      np.float32(self.view.left),  # X Starting Point
-                                      np.float32(self.view.bottom),  # Y Starting Point
                                       np.float32(self.sigma),  # Sigma
                                       block=self.block_size)
 

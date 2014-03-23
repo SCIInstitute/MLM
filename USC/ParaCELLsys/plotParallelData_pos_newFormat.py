@@ -1,5 +1,4 @@
 from PyQt4 import QtGui
-from gaussian_gpu import GpuGridGaussian
 
 # My Parameters
 import sys

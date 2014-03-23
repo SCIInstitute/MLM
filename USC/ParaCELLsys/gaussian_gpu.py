@@ -31,21 +31,21 @@ class GpuGaussianOld():
     /**
      * Maps the index of the grid cell on the x
      */
-    __device__ float map_index_x(int x, float dx, float start){
-        return x * dx + start;
+    __device__ float map_index_x(int x, float dx){
+        return x * dx;
     }
 
     /**
      * Maps the index of the grid cell on the y
      */
-    __device__ float map_index_y(int y, float dy, float start){
-        return y * dy + start;
+    __device__ float map_index_y(int y, float dy){
+        return y * dy;
     }
 
     /**
      * Computes the grid values of the gaussian
      */
-    __global__ void gpu_gaussian(float *grid, float *pts, int pt_len, float dx, float dy, float start_x, float start_y, float sigma)
+    __global__ void gpu_gaussian(float *grid, float *pts, int pt_len, float dx, float dy, float sigma)
     {
         float gaussian_bottom = (2 * CUDART_PI_F * pow(sigma, 2));
 
@@ -54,8 +54,8 @@ class GpuGaussianOld():
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
             float pt_x = pts[pt_num * 2];
             float pt_y = pts[pt_num * 2 + 1];
-            float val_x = map_index_x(blockIdx.x * blockDim.x + threadIdx.x, dx, start_x);
-            float val_y = map_index_y(blockIdx.y * blockDim.y + threadIdx.y, dy, start_y);
+            float val_x = map_index_x(blockIdx.x * blockDim.x + threadIdx.x, dx);
+            float val_y = map_index_y(blockIdx.y * blockDim.y + threadIdx.y, dy);
             float gaussian_top = expf(-(dist_squared(pt_x, val_x) + dist_squared(pt_y, val_y)) / (2 * pow(sigma, 2)));
             grid[idx] += gaussian_top/gaussian_bottom;
         }
@@ -84,8 +84,8 @@ class GpuGaussianOld():
         kernel = SourceModule(self.__cuda_code)
         self.gpu_gaussian = kernel.get_function("gpu_gaussian")
 
-        self.dx = float((axis[1] - axis[0])) / float(split[0] - 1)
-        self.dy = float((axis[3] - axis[2])) / float(split[1] - 1)
+        self.dx = 1 / float(split[0] - 1)
+        self.dy = 1 / float(split[1] - 1)
 
         self.grid_size, self.block_size = self.__setup_cuda_sizes(split)
 
@@ -97,12 +97,9 @@ class GpuGaussianOld():
                           np.int32(pts.shape[0]),  # Point Length
                           np.float32(self.dx),  # dx
                           np.float32(self.dy),  # dy
-                          np.float32(self.axis[0]),  # X Starting Point
-                          np.float32(self.axis[2]),  # Y Starting Point
                           np.float32(self.sigma),  # Sigma
                           block=self.block_size,
-                          grid=self.grid_size
-        )
+                          grid=self.grid_size)
 
     def __compute_sub_gaussian_gpu(self, sub_partitions):
         if sub_partitions < 1:
@@ -115,6 +112,8 @@ class GpuGaussianOld():
         # Does the correct partitioning
         alloc_size = self.pts.shape[0]/sub_partitions * 2 * self.pts.itemsize
         self.pts_gpu = cuda.mem_alloc(alloc_size)
+        self.pts[:, 0] = (self.pts[:, 0] - self.axis[0])/(self.axis[1] - self.axis[0])
+        self.pts[:, 1] = (self.pts[:, 1] - self.axis[2])/(self.axis[3] - self.axis[2])
 
         for partition in range(sub_partitions):
             sub_pts = self.pts[partition*d_part:(partition+1)*d_part, :]

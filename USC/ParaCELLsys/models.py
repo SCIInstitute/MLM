@@ -13,6 +13,13 @@ def dist_squared(val1, val2):
     return (val1 - val2) ** 2
 
 
+def getFilteredDataSet(data_set, view):
+    data = data_set[
+        (view[0] <= data_set[:, 0]) & (data_set[:, 0] <= view[1]) &
+        (view[2] <= data_set[:, 1]) & (data_set[:, 1] <= view[3])]
+    return data
+
+
 class GridGaussian():
 
     def __init__(self, array, axis, split, sigma):
