@@ -69,7 +69,7 @@ class GpuGridGaussian():
         for dset in self.data_sets:
             data = dset.getDataSet()
             if not data.flags['C_CONTIGUOUS']:
-                print "NOT CONTIGUOUS, trying to redo the points"
+                print "NOT CONTIGUOUS, trying to reformat the points"
                 data = np.require(data, dtype=data.dtype, requirements=['C'])
                 if not data.flags['C_CONTIGUOUS']:
                     raise Exception("Points are not contiguous")
@@ -96,7 +96,6 @@ class GpuGridGaussian():
 
     def __compute_guassian_on_pts(self):
         view = self.view_tile.get_View()
-
         for dset in self.data_sets:
             _data = np.array(dset.getDataSet(), copy=True)
             _data[:, 0] = (_data[:, 0] - view.left)/view.width()

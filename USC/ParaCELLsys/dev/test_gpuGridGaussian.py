@@ -440,13 +440,13 @@ class TestGpuGridGaussianActualDataSetMeaLea(TestCase):
         lea_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_lea_data()
 
         self.grid_size = (1024, 1024)
-        sigma = .02
+        sigma = .002
 
         mea_set = CellTypeDataSet("MEA", mea_data, rgb=(0, .5, .5))
         lea_set = CellTypeDataSet("LEA", lea_data, rgb=(0, .5, .5))
 
         # These are the individual tiles that will have information about the dataset
-        test_tile = ViewTile((mea_set, lea_set,), (tstart, tstop, 0, 10))
+        test_tile = ViewTile((mea_set, lea_set,), (tstart, tstop, 0, sum(numCells[0:2])))
 
         self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
         self.new.compute_grid()
