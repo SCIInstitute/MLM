@@ -1,10 +1,13 @@
 from unittest import TestCase
-from dev.gaussian_cpu import CpuGridGaussian
-from dev.gaussian_gpu_grid import GpuGridGaussian
-from gaussian_gpu import GpuGaussianOld
+
 import numpy as np
+
+from dev.gaussian_cpu import CpuGridGaussian
+from gaussian_gpu_grid import GpuGridGaussian
+from dev.gaussian_gpu import GpuGaussianOld
 from models import CellTypeDataSet, ParseParallelCellData
 from view import ViewTile
+
 
 __author__ = 'mavinm'
 __date__ = '3/22/14'
@@ -365,7 +368,7 @@ class TestRandomGpuGridGaussianComputeComplex1024x1024(TestCase):
     def setUp(self):
         a = np.array(np.random.random(12)).astype(np.float32).reshape(6, 2)
         self.grid_size = (1024, 1024)
-        sigma = .0005
+        sigma = .0001
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -430,7 +433,7 @@ class TestGpuGridGaussianStudyWindowSize(TestCase):
         new_data = self.new.get_grid_data()
         assert new_data.shape == self.grid_size
 
-
+"""
 class TestGpuGridGaussianActualDataSetMeaLea(TestCase):
     def setUp(self):
         tstart = 0
@@ -457,7 +460,7 @@ class TestGpuGridGaussianActualDataSetMeaLea(TestCase):
     def test_view_data(self):
         self.new.show_image()
 
-"""
+
 class TestGpuGridGaussianActualDataSetBC(TestCase):
     def setUp(self):
         tstart = 0

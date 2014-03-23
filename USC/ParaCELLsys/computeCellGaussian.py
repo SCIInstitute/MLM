@@ -1,4 +1,4 @@
-from gaussian_gpu import GpuGridGaussian
+from gaussian_gpu_grid import GpuGridGaussian
 from models import ParseParallelCellData, CellTypeDataSet
 from view import ViewTile
 
@@ -32,9 +32,17 @@ if __name__ == "__main__":
 
     sigma = 0.001
     for i in range(1, 5):
-        gc = GpuGridGaussian(gc_data, gc_tile.get_View().orig_view, (1024, 1024), i*sigma)
+        gc = GpuGridGaussian(gc_tile, (1024, 1024), i*sigma)
+        gc.compute_grid()
         gc.save_image("tmp/gc_data_gaussian_sigma=" + str(i*sigma) + ".bin")
         gc.clean_cuda()
-        bc = GpuGridGaussian(gc_data, gc_tile.get_View().orig_view, (1024, 1024), i*sigma)
+
+        bc = GpuGridGaussian(bc_tile, (1024, 1024), i*sigma)
+        bc.compute_grid()
         bc.save_image("tmp/bc_data_gaussian_sigma=" + str(i*sigma) + ".bin")
         bc.clean_cuda()
+
+        mea_lea = GpuGridGaussian(mea_lea_tile, (1024, 1024), i*sigma)
+        mea_lea.compute_grid()
+        mea_lea.save_image("tmp/mea_lea_data_gaussian_sigma=" + str(i*sigma) + ".bin")
+        mea_lea.clean_cuda()
