@@ -103,7 +103,7 @@ class TestGpuGridGaussianCompute2x2(TestCase):
 
 class TestGpuGridGaussianCompute32x32(TestCase):
     def setUp(self):
-        a = np.array([[3, 3], [5, 5], [3, 3], [5, 5], [4, 4]]).astype(np.float32).reshape(5, 2)
+        a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4, 4]]).astype(np.float32).reshape(5, 2)
         self.grid_size = (32, 32)
         sigma = .07
 
@@ -145,14 +145,14 @@ class TestGpuGridGaussianCompute64x64(TestCase):
     def setUp(self):
         a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4, 4]]).astype(np.float32).reshape(5, 2)
         self.grid_size = (64, 64)
-        sigma = .15
+        sigma = .07
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
         # These are the individual tiles that will have information about the dataset
         test_tile = ViewTile((test_set,), (3, 5, 3, 5))
 
-        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma, debug=True)
         self.new.compute_grid()
         self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
         self.old.compute_grid()
@@ -185,7 +185,7 @@ class TestGpuGridGaussianComputeComplex64x64(TestCase):
     def setUp(self):
         a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4.1, 4.1]]).astype(np.float32).reshape(5, 2)
         self.grid_size = (64, 64)
-        sigma = .15
+        sigma = .07
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -330,7 +330,7 @@ class TestGpuGridGaussianComputeComplex1024x1024(TestCase):
     def setUp(self):
         a = np.array([[3, 3], [5, 5], [3, 5], [5, 3], [4.1, 4.1], [3, 3]]).astype(np.float32).reshape(6, 2)
         self.grid_size = (1024, 1024)
-        sigma = .2
+        sigma = .001
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -361,18 +361,18 @@ class TestGpuGridGaussianComputeComplex1024x1024(TestCase):
         assert new_data.shape == self.grid_size
 
 
-class TestGpuGridGaussianLargeWindowSize(TestCase):
+class TestRandomGpuGridGaussianComputeComplex1024x1024(TestCase):
     def setUp(self):
-        a = np.array([[750, 5], [0, 0], [1500, 0], [1500, 10], [0, 10]]).astype(np.float32).reshape(5, 2)
+        a = np.array(np.random.random(12)).astype(np.float32).reshape(6, 2)
         self.grid_size = (1024, 1024)
         sigma = .1
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
         # These are the individual tiles that will have information about the dataset
-        test_tile = ViewTile((test_set,), (0, 1500, 0, 10))
+        test_tile = ViewTile((test_set,), (0, 1, 0, 1))
 
-        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma, debug=True)
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
         self.new.compute_grid()
         self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
         self.old.compute_grid()
@@ -395,15 +395,55 @@ class TestGpuGridGaussianLargeWindowSize(TestCase):
         new_data = self.new.get_grid_data()
         assert new_data.shape == self.grid_size
 
-"""
+
+class TestGpuGridGaussianStudyWindowSize(TestCase):
+    def setUp(self):
+        a = np.array([[750, 5], [0, 0], [1500, 0], [1500, 10], [0, 10], [237, 2], [237, 2], [1234, 7], [400, 3]]).astype(np.float32).reshape(9, 2)
+        self.grid_size = (1024, 1024)
+        sigma = .1
+
+        test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
+
+        # These are the individual tiles that will have information about the dataset
+        test_tile = ViewTile((test_set,), (0, 1500, 0, 10))
+
+        self.new = GpuGridGaussian(test_tile, self.grid_size, sigma)
+        self.new.compute_grid()
+        self.old = GpuGaussianOld(test_tile.get_Data()[0].getDataSet(), test_tile.get_View().view(), self.grid_size, sigma)
+        self.old.compute_grid()
+
+    def doCleanups(self):
+        self.new.clean_cuda()
+        self.old.clean_cuda()
+
+    def test_shape(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert new_data.shape == old_data.shape
+
+    def test_alike_arrays(self):
+        new_data = self.new.get_grid_data()
+        old_data = self.old.get_grid_data()
+        assert np.allclose(new_data, old_data)
+
+    def test_size(self):
+        new_data = self.new.get_grid_data()
+        assert new_data.shape == self.grid_size
+
+
 class TestGpuGridGaussianActualDataSetBC(TestCase):
     def setUp(self):
         tstart = 0
         tstop = 1500
         numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
         bc_data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=True).get_bc_data()
-        self.grid_size = (512, 512)
-        sigma = .02
+        if not bc_data.flags['C_CONTIGUOUS']:
+            print "NOT CONTIGUOUS, trying to redo the points"
+            bc_data = np.require(bc_data, dtype=bc_data.dtype, requirements=['C'])
+            if not bc_data.flags['C_CONTIGUOUS']:
+                raise Exception("Points are not contiguous")
+        self.grid_size = (1024, 1024)
+        sigma = .002
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", bc_data, rgb=(0, .5, .5))
 
@@ -418,14 +458,13 @@ class TestGpuGridGaussianActualDataSetBC(TestCase):
 
     def test_view_data(self):
         self.new.show_image()
-"""
 
 
 class TestGpuGridGaussianCompute128x128(TestCase):
     def setUp(self):
         a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
         self.size = (128, 128)
-        sigma = .15
+        sigma = .035
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 
@@ -460,7 +499,7 @@ class TestGpu2Cpu(TestCase):
     def setUp(self):
         a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
         self.size = (64, 64)
-        sigma = .1
+        sigma = .07
 
         test_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", a, rgb=(0, .5, .5))
 

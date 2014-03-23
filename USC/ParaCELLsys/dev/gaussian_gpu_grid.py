@@ -93,13 +93,12 @@ class GpuGridGaussian():
         for row in range(self.grid_size[0]):
             for col in range(self.grid_size[1]):
                 # 3 * SIGMA give the 95%
-                # left = dx * (col - 3 * self.sigma * self.grid.shape[1]/dx) + view.left
-                # right = dx * (col + 1 + 3 * self.sigma * self.grid.shape[1]/dx) + view.left
-                # bottom = dy * (row - 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
-                # top = dy * (row + 1 + 3 * self.sigma * self.grid.shape[0]/dy) + view.bottom
-                pts = _data
-                if self.debug:
-                    print len(pts)
+                left = 1 / float(self.grid_size[1]) * col - (3 * self.sigma)
+                right = 1 / float(self.grid_size[1]) * (col + 1) + (3 * self.sigma)
+                bottom = 1 / float(self.grid_size[0]) * row - (3 * self.sigma)
+                top = 1 / float(self.grid_size[0]) * (row + 1) + (3 * self.sigma)
+                pts = getFilteredDataSet(_data, (left, right, bottom, top))
+
                 if len(pts) > 0:
                     self.pts_gpu = cuda.mem_alloc_like(pts)
                     cuda.memcpy_htod(self.pts_gpu, pts)
