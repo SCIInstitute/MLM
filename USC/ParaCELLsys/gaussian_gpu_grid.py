@@ -47,7 +47,7 @@ class GpuGridGaussian():
     {
         float gaussian_bottom = (2 * CUDART_PI_F * pow(sigma, 2));
 
-        int idx = threadIdx.y * blockDim.x * gridDim_x + blockIdx_y * blockDim.y * blockDim.x * gridDim_y + (threadIdx.x + blockIdx_x * blockDim.x);
+        int idx = threadIdx.y * blockDim.x * gridDim_x + blockIdx_y * blockDim.y * blockDim.x * gridDim_x + (threadIdx.x + blockIdx_x * blockDim.x);
 
         for (int pt_num = 0; pt_num < pt_len; pt_num++){
             float pt_x = pts[pt_num * 2];
@@ -60,9 +60,9 @@ class GpuGridGaussian():
     }
     """
 
-    def __init__(self, view_tile, split, sigma, debug=False):
+    def __init__(self, view_tile, size, sigma, debug=False):
         self.debug = debug
-        if split[0] < 2 or split[1] < 2:
+        if size[0] < 2 or size[1] < 2:
             raise ValueError("Split needs to be at least 2x2")
 
         self.data_sets = view_tile.get_Data()
@@ -80,7 +80,7 @@ class GpuGridGaussian():
         self.pts_gpu = None
 
         # Initiates all of cuda stuff
-        self.grid = np.zeros(split).astype(np.float32)
+        self.grid = np.zeros(size).astype(np.float32)
         self.grid_gpu = cuda.mem_alloc_like(self.grid)
         cuda.memcpy_htod(self.grid_gpu, self.grid)
 
@@ -89,13 +89,14 @@ class GpuGridGaussian():
 
         self.view = self.view_tile.get_View()
 
-        self.dx = 1 / float(split[0] - 1)
-        self.dy = 1 / float(split[1] - 1)
+        self.grid_size, self.block_size = self.__setup_cuda_sizes(size)
 
-        self.grid_size, self.block_size = self.__setup_cuda_sizes(split)
+        self.dx = 1 / float(size[1] - 1)
+        self.dy = 1 / float(size[0] - 1)
 
     def __compute_guassian_on_pts(self):
         view = self.view_tile.get_View()
+
         for dset in self.data_sets:
             _data = np.array(dset.getDataSet(), copy=True)
             _data[:, 0] = (_data[:, 0] - view.left)/view.width()
@@ -118,8 +119,8 @@ class GpuGridGaussian():
                                           self.pts_gpu,  # Points
                                           np.int32(col),  # Block Index x
                                           np.int32(row),  # Block Index y
-                                          np.int32(self.grid_size[0]),  # Grid Dimensions x
-                                          np.int32(self.grid_size[1]),  # Grid Dimensions y
+                                          np.int32(self.grid_size[1]),  # Grid Dimensions x
+                                          np.int32(self.grid_size[0]),  # Grid Dimensions y
                                           np.int32(pts.shape[0]),  # Point Length
                                           np.float32(self.dx),  # dx
                                           np.float32(self.dy),  # dy
@@ -141,15 +142,16 @@ class GpuGridGaussian():
         # Square Root
         max_threads_sr = int(math.sqrt(max_threads))
 
-        if split[0] <= max_threads_sr:
+        if split[0] <= max_threads_sr and split[1] <= max_threads_sr:
             block_size = (split[0], split[1], 1)
             grid_size = (1, 1)
         else:
             if split[0] % max_threads_sr != 0 or split[1] % max_threads_sr != 0:
                 raise ValueError("Only supports multiples of %i" % max_threads_sr)
-            size_ = split[0] / max_threads_sr
+            size_m = split[0] / max_threads_sr
+            size_n = split[1] / max_threads_sr
+            grid_size = (size_m, size_n)
             block_size = (max_threads_sr, max_threads_sr, 1)
-            grid_size = (size_, size_)
         return grid_size, block_size
 
     def save_image(self, filename):

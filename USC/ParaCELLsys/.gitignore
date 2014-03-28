@@ -1,3 +1,5 @@
-test/*
-tmp/*
-.idea/*
+#  DIRECTORIES  #
+#################
+tmp/
+.idea/
+scratch/
