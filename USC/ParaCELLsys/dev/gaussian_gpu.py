@@ -1,12 +1,13 @@
 import math
 import os
+from timeit import default_timer as timer
 
 # Make sure pycuda.autoinit is initiated
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import pycuda.driver as cuda
-import time
 from convertGaussian2Image import *
+import numpy as np
 
 
 __author__ = 'mavinm'
@@ -189,3 +190,13 @@ class GpuGaussianOld():
         Cleans up cuda code
         """
         self.grid_gpu.free()
+
+
+if __name__ == "__main__":
+    a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
+    start = timer()
+    g = GpuGaussianOld(a, (0, 1, 0, 1), (512, 512), .1)
+    g.compute_grid()
+    dt = timer() - start
+    print "Gaussian Blur created on GPU in %f s" % dt
+    g.show_image()

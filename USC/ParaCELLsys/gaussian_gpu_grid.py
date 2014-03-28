@@ -1,13 +1,14 @@
 import math
 import os
+from timeit import default_timer as timer
 
 # Make sure pycuda.autoinit is initiated
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import pycuda.driver as cuda
-import time
 from convertGaussian2Image import *
-from models import getFilteredDataSet
+from models import getFilteredDataSet, CellTypeDataSet
+from view import ViewTile
 
 
 __author__ = 'mavinm'
@@ -188,3 +189,19 @@ class GpuGridGaussian():
         Cleans up cuda code
         """
         self.grid_gpu.free()
+
+
+if __name__ == "__main__":
+    a = np.array([[0, 0], [1, 1], [0, 1], [1, 0], [.5, .5]]).astype(np.float32).reshape(5, 2)
+    sigma = .1
+
+    test_set = CellTypeDataSet("", a, rgb=(0, .5, .5))
+
+    # These are the individual tiles that will have information about the dataset
+    test_tile = ViewTile((test_set,), (0, 1, 0, 1))
+    start = timer()
+    new = GpuGridGaussian(test_tile, (512, 512), sigma)
+    new.compute_grid()
+    dt = timer() - start
+    print "Gaussian Blur created on GPU in %f s" % dt
+    new.show_image()
