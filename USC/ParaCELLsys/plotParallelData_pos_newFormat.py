@@ -2,7 +2,7 @@ from PyQt4 import QtGui
 
 # My Parameters
 import sys
-from globals import *
+from settings import *
 from models import *
 from widget import GuiCellPlot
 from view import ViewTile
