@@ -30,19 +30,23 @@ if __name__ == "__main__":
     gc_tile = ViewTile((gc_set,), (tstart, tstop, 0, 10))
     bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 
+    # Values are normalized from [0-1500, 0-n] to grid of [0-1, 0-1].  Sigma choice should be between 0-1
     sigma = 0.001
     for i in range(1, 5):
         gc = GpuGridGaussian(gc_tile, (1024, 1024), i*sigma)
         gc.compute_grid()
         gc.save_image("tmp/gc_data_gaussian_sigma=" + str(i*sigma) + ".bin")
+        gc.show_image()
         gc.clean_cuda()
 
         bc = GpuGridGaussian(bc_tile, (1024, 1024), i*sigma)
         bc.compute_grid()
         bc.save_image("tmp/bc_data_gaussian_sigma=" + str(i*sigma) + ".bin")
+        bc.show_image()
         bc.clean_cuda()
 
         mea_lea = GpuGridGaussian(mea_lea_tile, (1024, 1024), i*sigma)
         mea_lea.compute_grid()
         mea_lea.save_image("tmp/mea_lea_data_gaussian_sigma=" + str(i*sigma) + ".bin")
+        mea_lea.show_image()
         mea_lea.clean_cuda()

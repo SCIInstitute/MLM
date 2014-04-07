@@ -6,6 +6,7 @@ __date__ = '3/21/14'
 
 
 def rescale_data_to_image(data):
+    # data = data **
     return (255.0 / data.max() * (data - data.min())).astype(np.uint8)
 
 if __name__ == "__main__":
