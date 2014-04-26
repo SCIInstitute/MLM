@@ -1,13 +1,11 @@
 import numpy as np
 import Image
 
+from models import rescale_data_to_image
+
+
 __author__ = 'mavinm'
 __date__ = '3/21/14'
-
-
-def rescale_data_to_image(data):
-    # data = data **
-    return (255.0 / data.max() * (data - data.min())).astype(np.uint8)
 
 if __name__ == "__main__":
     filenames = {

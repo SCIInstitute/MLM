@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import sys
 from settings import *
 from models import *
-from widget import GuiCellPlot
+from widget import GuiCellPlot, HeightMapUIWidget
 from view import ViewTile
 
 my_marker_size = 2
@@ -43,9 +43,8 @@ bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 # should have one window, but three GuiCellPlots in it, or
 # have GuiCellPlot be a singleton class with substructures for each plot
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile, cell_hierarchy=data.cell_hierarchy)
+ui_widget = HeightMapUIWidget(window)
+window.set_ui_heightmap_widget(ui_widget)
 window.show()
 
-print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
-print "Open GLSL Version: " + gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION)
-
-app.exec_()
+sys.exit(app.exec_())

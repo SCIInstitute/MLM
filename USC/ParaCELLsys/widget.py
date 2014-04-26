@@ -1,18 +1,22 @@
-from kdtree import KDTreeWritable
+import threading
+import thread
+import time
+
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget, QMessageBox
 from PyQt4 import QtCore
 from PyQt4.QtOpenGL import QGLWidget
-from rubberband import RectRubberband
-from tools import ToolQB, Callbacks, Tools
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.arrays.vbo as glvbo
 import numpy as np
+
+from kdtree import KDTreeWritable
+from models import rescale_data_to_image
+from rubberband import RectRubberband
+from tools import ToolQB, Callbacks, Tools
 from ui import UI
-import threading
-import thread
-import time
+
 
 __author__ = 'Mavin Martin'
 
@@ -30,15 +34,21 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         super(GuiCellPlot, self).__init__()
         threading.Thread.__init__(self)
         self.central = QWidget(self)
+        self.setCentralWidget(self.central)
+        self.ui_widget = None
 
         # Makes the widget size not resizable
         self.setFixedSize(self.width, self.height)
 
+        self.show_height_map = True
+
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
-        mea_lea_widget = FigureDiagramWidget(mea_lea_tile, show_time_title=True)
-        gc_widget = FigureDiagramWidget(gc_tile)
-        bc_widget = FigureDiagramWidget(bc_tile)
+        mea_lea_widget = FigureDiagramWidget(mea_lea_tile, self.show_height_map,
+                                             "tmp/mea_lea_data_gaussian_sigma=0.001.bin",
+                                             show_time_title=True)
+        gc_widget = FigureDiagramWidget(gc_tile, self.show_height_map, "tmp/gc_data_gaussian_sigma=0.001.bin")
+        bc_widget = FigureDiagramWidget(bc_tile, self.show_height_map, "tmp/bc_data_gaussian_sigma=0.001.bin")
 
         self.widgets = (mea_lea_widget, gc_widget, bc_widget)
 
@@ -54,30 +64,71 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         self.resize(self.width, self.height)
         self.setWindowTitle("ParaCELLsys")
 
-        self.setCentralWidget(self.central)
         self.program_active = True
+
         self.start()
+
+        self.initUI()
 
         self.vbos = []
         for cell_num in cell_hierarchy:
             data = np.array(cell_hierarchy[cell_num], dtype=np.float32)
             self.vbos.append(glvbo.VBO(data))
 
-    def keyPressEvent(self, QKeyEvent):
-        # 67 = 'c'
-        if QKeyEvent.key() == 67:
-            print 'c pressed'
-        # 68 = 'd'
-        elif QKeyEvent.key() == 68:
-            for child in self.boxy.children():
-                print child
+    def set_ui_heightmap_widget(self, widget):
+        self.ui_widget = widget
+        if self.show_height_map:
+            self.ui_widget.show()
+        else:
+            self.ui_widget.hide()
 
+
+    def initUI(self):
+        menubar = self.menuBar()
+        viewMenu = menubar.addMenu('&View')
+        helpMenu = menubar.addMenu('&Help')
+
+        # Tutorial
+        tutorialAction = QtGui.QAction('&Tutorial', self)
+        tutorialAction.setShortcut('Ctrl+T')
+        tutorialAction.setStatusTip('Interaction Guide')
+        tutorialAction.triggered.connect(self.tutorial)
+        helpMenu.addAction(tutorialAction)
+
+        # Height-Map Toggle
+        heightAction = QtGui.QAction('&Height-map/Regular-view', self)
+        heightAction.setShortcut('Ctrl+Y')
+        heightAction.setStatusTip('Toggle between height-map and regular-view')
+        heightAction.triggered.connect(self.toggle_height_map)
+        viewMenu.addAction(heightAction)
+
+    def tutorial(self):
+        QMessageBox.about(self, "Tutorial",
+                          "You can do many things inside of this application.  "
+                          "Click on a cell to print the data results inside of the console window."
+        )
+
+    def toggle_height_map(self):
+        self.show_height_map = not self.show_height_map
+        for widget in self.widgets:
+            widget.show_height_map = self.show_height_map
+            widget.repaint()
+
+        if self.show_height_map:
+            self.ui_widget.show()
+        else:
+            self.ui_widget.hide()
+
+    def keyPressEvent(self, QKeyEvent):
         print QKeyEvent.key()
 
     def closeEvent(self, QCloseEvent):
         self.program_active = False
         for widget in self.widgets:
             widget.closeEvent(QCloseEvent)
+
+        if self.ui_widget is not None:
+            self.ui_widget.close()
 
     def run(self):
         while self.program_active:
@@ -94,15 +145,35 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
             time.sleep(.25)
 
 
+class HeightMapUIWidget(QWidget):
+    """
+    Singleton: User interface that shows when height-map is enabled
+    """
+    width = 400
+    height = 400
+
+    def __init__(self, parent=None):
+        # pass
+        super(HeightMapUIWidget, self).__init__()
+        self.resize(self.width, self.height)
+        self.move(0, 0)
+
+        # Makes the widget size not resizable
+        # self.setFixedSize(self.width, self.height)
+
+        self.setWindowTitle("Height Map UI")
+
+
 class GLPlotWidget(QGLWidget, threading.Thread):
     """
     Anything here is just for the plot objects
     """
 
-    def __init__(self, viewer, parent=None):
+    def __init__(self, viewer, parent, texture_file):
         QGLWidget.__init__(self)
         threading.Thread.__init__(self)
 
+        self.texture_file = texture_file
         self.program_active = True
         self.mouse_origin = 0
         self.alpha = .2
@@ -133,6 +204,27 @@ class GLPlotWidget(QGLWidget, threading.Thread):
 
         # Starts the thread of anything inside of the run() method
         self.start()
+
+    def initTexture(self):
+        data = np.load(self.texture_file)
+        data = rescale_data_to_image(data)
+        w, h = data.shape
+
+        # generate a texture id, make it current
+        self.texture = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
+
+        # texture mode and parameters controlling wrapping and scaling
+        gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+
+        # map the image data to the texture. note that if the input
+        # type is GL_FLOAT, the values must be in the range [0..1]
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGB, w, h, 0,
+                        gl.GL_LUMINANCE, gl.GL_UNSIGNED_BYTE, data)
 
     def recreate_kd_tree(self):
         if (self.width == 0) or (self.height == 0):
@@ -207,30 +299,27 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         self.setOrtho((l, r, b, t))
 
     # flesh this out- want to have it dynamically resize
-    def draw_axes(self):
+    def draw_axes_markings(self):
         gl.glLineWidth(2.5)
         self.qglColor(QtCore.Qt.black)
         left, bottom, z_ = glu.gluUnProject(0, 0, 0)
         right, top, z_ = glu.gluUnProject(self.width, self.height, 0)
         gl.glBegin(gl.GL_LINES)
         # Bottom
-        gl.glVertex3f(left, bottom, 0)
-        gl.glVertex3f(right, bottom, 0)
+        gl.glVertex2f(left, bottom)
+        gl.glVertex2f(right, bottom)
         # Right
-        gl.glVertex3f(right, bottom, 0)
-        gl.glVertex3f(right, top, 0)
+        gl.glVertex2f(right, bottom)
+        gl.glVertex2f(right, top)
         # Top
-        gl.glVertex3f(left, top, 0)
-        gl.glVertex3f(right, top, 0)
+        gl.glVertex2f(left, top)
+        gl.glVertex2f(right, top)
         # Left
-        gl.glVertex3f(left, bottom, 0)
-        gl.glVertex3f(left, top, 0)
+        gl.glVertex2f(left, bottom)
+        gl.glVertex2f(left, top)
         gl.glEnd()
 
         self.draw_axes_ticks(left, right, bottom, top, self.x_ticks, self.y_ticks)
-
-        x_, y_, z_ = glu.gluUnProject(0, 50, 0)
-        # self.renderText(x_, y_, 0.0, "Multisampling disabled", self.font())
 
     def draw_axes_ticks(self, left, right, bottom, top, num_ticks_x, num_ticks_y):
         tick_width = 5
@@ -255,6 +344,11 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
+        if self.texture_file is not None:
+            self.initTexture()
+
+        print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
+        print "Open GLSL Version: " + gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION)
 
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()
@@ -302,13 +396,9 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glPopMatrix()
         gl.glDisable(gl.GL_POINT_SMOOTH)
 
-    def paintGL(self):
-        """
-        Paint the scene.
-        """
-        # clear the buffer
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+    def drawDataPoints(self):
         gl.glEnable(gl.GL_BLEND)
+
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glMatrixMode(gl.GL_MODELVIEW)
         for dSet in self.data_sets:
@@ -330,6 +420,44 @@ class GLPlotWidget(QGLWidget, threading.Thread):
 
         gl.glDisable(gl.GL_BLEND)
 
+    def drawHeightMap(self):
+        view = self.view.orig_view
+        gl.glPushMatrix()
+        gl.glColor3f(1, 1, 1)
+
+        # enable textures, bind to our texture
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
+
+        gl.glBegin(gl.GL_QUADS)
+        gl.glTexCoord2f(0, 0)
+        gl.glVertex2f(view[0], view[2])
+
+        gl.glTexCoord2f(1, 0)
+        gl.glVertex2f(view[1], view[2])
+
+        gl.glTexCoord2f(1, 1)
+        gl.glVertex2f(view[1], view[3])
+
+        gl.glTexCoord2f(0, 1)
+        gl.glVertex2f(view[0], view[3])
+        gl.glEnd()
+
+        gl.glDisable(gl.GL_TEXTURE_2D)
+
+        gl.glPopMatrix()
+
+    def paintGL(self):
+        """
+        Paint the scene.
+        """
+        # clear the buffer
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        if self.parent.show_height_map and self.texture_file is not None:
+            self.drawHeightMap()
+        else:
+            self.drawDataPoints()
+
         if self.mouse_pos is not None and not self.rubberband.isVisible():
             self.draw_kd_tree_point()
 
@@ -337,9 +465,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             self.rubberband.restrictBoundaries(self.width, self.height)
             self.rubberband.draw()
 
-        gl.glDisable(gl.GL_BLEND)
-
-        self.draw_axes()
+        self.draw_axes_markings()
 
         gl.glFlush()
 
@@ -386,8 +512,8 @@ class GLUIWidget(UI, GLPlotWidget):
     Widget class for the three cell plots. Called in GuiCellPlot. Inherits from GLPlotWidget
     """
 
-    def __init__(self, viewer, parent=None):
-        GLPlotWidget.__init__(self, viewer, parent=parent)
+    def __init__(self, viewer, parent, texture_file):
+        GLPlotWidget.__init__(self, viewer, parent, texture_file)
 
     def mousePressEventLeft(self, event):
         print "Mouse Down Event"
@@ -410,7 +536,7 @@ class GLUIWidget(UI, GLPlotWidget):
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
             else:
-                QMessageBox.about(self, "ERROR", "Your view window is too small to compute.")
+                QMessageBox.information(self, "ERROR", "Your view window is too small to compute.")
             self.kd_tree_active = False
             self.repaint()
             self.parentWidget().repaint()
@@ -461,7 +587,7 @@ def convertLabel(value):
 
 
 class FigureDiagramWidget(QWidget):
-    def __init__(self, viewer, show_time_title=False):
+    def __init__(self, viewer, show_height_map, texture_file, show_time_title=False):
         QWidget.__init__(self)
 
         self.show_time_title = show_time_title
@@ -476,9 +602,11 @@ class FigureDiagramWidget(QWidget):
         self.title_font = QtGui.QFont()
         self.title_font.setPointSize(10)
 
+        self.show_height_map = show_height_map
+
         boxy = QtGui.QVBoxLayout(self)
         self.setLayout(boxy)
-        self.canvas = GLUIWidget(viewer, parent=self)
+        self.canvas = GLUIWidget(viewer, self, texture_file)
         self.title = self.canvas.title
         self.layout().addWidget(self.canvas)
         self.metrics = QtGui.QFontMetrics(self.font())

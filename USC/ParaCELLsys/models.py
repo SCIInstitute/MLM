@@ -20,6 +20,15 @@ def getFilteredDataSet(data_set, view):
     return data
 
 
+def rescale_data_to_image(data):
+    """
+    Normalizes the numpy data matrix to 0-255
+    @param data:
+    @return:
+    """
+    return (255.0 / data.max() * (data - data.min())).astype(np.uint8)
+
+
 class GridGaussian():
 
     def __init__(self, array, axis, split, sigma):
