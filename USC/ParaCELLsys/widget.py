@@ -50,7 +50,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         gc_widget = FigureDiagramWidget(gc_tile, self.show_height_map, "tmp/gc_data_gaussian_sigma=0.001.bin")
         bc_widget = FigureDiagramWidget(bc_tile, self.show_height_map, "tmp/bc_data_gaussian_sigma=0.001.bin")
 
-        self.widgets = (mea_lea_widget, gc_widget, bc_widget)
+        self.widgets = (bc_widget, gc_widget, mea_lea_widget)
 
         self.boxy = QtGui.QVBoxLayout(self.central)
 
@@ -114,11 +114,6 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
             widget.show_height_map = self.show_height_map
             widget.repaint()
 
-        if self.show_height_map:
-            self.ui_widget.show()
-        else:
-            self.ui_widget.hide()
-
     def keyPressEvent(self, QKeyEvent):
         print QKeyEvent.key()
 
@@ -155,6 +150,7 @@ class HeightMapUIWidget(QWidget):
     def __init__(self, parent=None):
         # pass
         super(HeightMapUIWidget, self).__init__()
+        self.parent = parent
         self.resize(self.width, self.height)
         self.move(0, 0)
 
@@ -162,6 +158,16 @@ class HeightMapUIWidget(QWidget):
         # self.setFixedSize(self.width, self.height)
 
         self.setWindowTitle("Height Map UI")
+
+        self.add_radio_buttons()
+
+    def add_radio_buttons(self):
+        layout = QtGui.QVBoxLayout(self)
+        for widget in self.parent.widgets:
+            r = QtGui.QCheckBox(widget.title.replace("\n", ""), self)
+            layout.addWidget(r)
+            r.setChecked(True)
+            r.clicked.connect(widget.test_action, r.isChecked())
 
 
 class GLPlotWidget(QGLWidget, threading.Thread):
@@ -612,6 +618,12 @@ class FigureDiagramWidget(QWidget):
         self.metrics = QtGui.QFontMetrics(self.font())
         self.title_metrics = QtGui.QFontMetrics(self.title_font)
         self.layout().setContentsMargins(self.padding_left, self.metrics.height() / 2, 30, self.padding_bottom)
+
+    def test_action(self, checked):
+        if checked:
+            self.show()
+        else:
+            self.hide()
 
     def paintEvent(self, QPaintEvent):
         self.height = self.canvas.height

@@ -43,6 +43,7 @@ bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 # should have one window, but three GuiCellPlots in it, or
 # have GuiCellPlot be a singleton class with substructures for each plot
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile, cell_hierarchy=data.cell_hierarchy)
+
 ui_widget = HeightMapUIWidget(window)
 window.set_ui_heightmap_widget(ui_widget)
 window.show()
