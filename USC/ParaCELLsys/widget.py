@@ -159,7 +159,7 @@ class UIWidget(QWidget):
         # Makes the widget size not resizable
         # self.setFixedSize(self.width, self.height)
 
-        self.setWindowTitle("UI")
+        self.setWindowTitle("Control Center")
 
         self.add_radio_buttons()
 
