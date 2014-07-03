@@ -44,11 +44,13 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
 
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
+        # TODO - The named files are passed in to show images of what was computed using computeCellGaussian, needs to
+        # TODO - change in the future
         mea_lea_widget = FigureDiagramWidget(mea_lea_tile, self.show_height_map,
-                                             "tmp/mea_lea_data_gaussian_sigma=0.001.bin",
+                                             "data/mea_lea_data_gaussian_sigma=0.001.bin",
                                              show_time_title=True)
-        gc_widget = FigureDiagramWidget(gc_tile, self.show_height_map, "tmp/gc_data_gaussian_sigma=0.001.bin")
-        bc_widget = FigureDiagramWidget(bc_tile, self.show_height_map, "tmp/bc_data_gaussian_sigma=0.001.bin")
+        gc_widget = FigureDiagramWidget(gc_tile, self.show_height_map, "data/gc_data_gaussian_sigma=0.001.bin")
+        bc_widget = FigureDiagramWidget(bc_tile, self.show_height_map, "data/bc_data_gaussian_sigma=0.001.bin")
 
         self.widgets = (bc_widget, gc_widget, mea_lea_widget)
 
@@ -140,7 +142,7 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
             time.sleep(.25)
 
 
-class HeightMapUIWidget(QWidget):
+class UIWidget(QWidget):
     """
     Singleton: User interface that shows when height-map is enabled
     """
@@ -149,7 +151,7 @@ class HeightMapUIWidget(QWidget):
 
     def __init__(self, parent=None):
         # pass
-        super(HeightMapUIWidget, self).__init__()
+        super(UIWidget, self).__init__()
         self.parent = parent
         self.resize(self.width, self.height)
         self.move(0, 0)
@@ -157,7 +159,7 @@ class HeightMapUIWidget(QWidget):
         # Makes the widget size not resizable
         # self.setFixedSize(self.width, self.height)
 
-        self.setWindowTitle("Height Map UI")
+        self.setWindowTitle("UI")
 
         self.add_radio_buttons()
 

@@ -1,8 +1,0 @@
-*.pyc
-*.out
-*.png
-voltageTraces/*
-connectivityData/*
-*.pickle
-cellInfo*
-spikeTimes

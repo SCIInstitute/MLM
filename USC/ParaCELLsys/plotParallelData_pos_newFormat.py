@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 import sys
 from settings import *
 from models import *
-from widget import GuiCellPlot, HeightMapUIWidget
+from widget import GuiCellPlot, UIWidget
 from view import ViewTile
 
 my_marker_size = 2
@@ -44,7 +44,7 @@ bc_tile = ViewTile((bc_set,), (tstart, tstop, 0, 10))
 # have GuiCellPlot be a singleton class with substructures for each plot
 window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile, cell_hierarchy=data.cell_hierarchy)
 
-ui_widget = HeightMapUIWidget(window)
+ui_widget = UIWidget(window)
 window.set_ui_heightmap_widget(ui_widget)
 window.show()
 
