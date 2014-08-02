@@ -564,13 +564,9 @@ class GLUIWidget(UI, GLPlotWidget):
             self.parentWidget().repaint()
         else:
             self.view.set_view(self.prevView)
+            self.kd_tree_active = False
             self.repaint()
             self.parentWidget().repaint()
-            if callback == Callbacks.CLICK:
-                tree_num, pt_num, distance, x, y = self.find_data_pos()
-                print "Focus Point Number= " + str(pt_num)
-                print "Distance from Mouse= " + str(distance)
-                print "Point = (" + str(x) + ", " + str(y) + ")"
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
