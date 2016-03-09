@@ -1,5 +1,6 @@
 from enum import Enum
 import math
+import OpenGL.GL as gl
 import OpenGL.GLU as glu
 from PyQt4.QtGui import QWidget, QMessageBox
 
@@ -58,6 +59,7 @@ class ToolQB():
 
         if view is not None:
             self.orig_view_scale = view
+            print('view', view)
             print view
 
         """
@@ -85,6 +87,7 @@ class ToolQB():
             else:
                 print "Zoom in"
                 callback = Callbacks.RESIZE
+
             self.prev_position_scale = None
             self.anchor_position_scale = None
             self.orig_view_scale = None

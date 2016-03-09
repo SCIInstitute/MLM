@@ -29,9 +29,10 @@ class Viewer():
         self.set_view((float(view[0]), float(view[1]), float(view[2]), float(view[3])))
 
         self.orig_view = (float(view[0]), float(view[1]), float(view[2]), float(view[3]))
+        self.orig_point_size = self.point_size()
 
     def view(self):
-        return self.left, self.right, self.bottom, self.top
+        return self.left, self.right, self.bottom, self.top, self.point_size()
 
     def leftTop(self):
         return self.left, self.top
@@ -57,6 +58,22 @@ class Viewer():
     def height(self):
         return self.top - self.bottom
 
+    def perimeter(self):
+        return 2 * self.height() + 2 * self.width()
+
+    def point_size(self):
+        p = self.perimeter()
+        if p > 2000:
+            return 1
+        elif 2000 >= p > 900:
+            return 2
+        elif 900 >= p > 100:
+            return 3
+        elif 100 >= p > 50:
+            return 4
+        else:
+            return 5
+
     def reset_view(self):
         self.left, self.right, self.bottom, self.top = self.orig_view
 
@@ -78,7 +95,7 @@ class ViewTile():
     Keeps Track of the data sets along with window information like view size, etc.
 
     data_set : CellTypeDataSet(dataSet, rgb, xyz) # Cell Data being read in
-    view     : (x_left, x_right, y_bottom, y_top) # The window sizes to show the data
+    view     : (x_left, x_right, y_bottom, y_top, perimeter) # The window sizes to show the data
     """
 
     def __init__(self, data_set, view):

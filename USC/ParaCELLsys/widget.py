@@ -40,15 +40,13 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
         # Makes the widget size not resizable
         self.setFixedSize(self.width, self.height)
 
-        self.show_height_map = True
+        self.show_height_map = False #need cuda
 
         # all three plots as widgets with separate labels.
         # We want these as separate blocks so we can have axis and things
         # TODO - The named files are passed in to show images of what was computed using computeCellGaussian, needs to
         # TODO - change in the future
-        mea_lea_widget = FigureDiagramWidget(mea_lea_tile, self.show_height_map,
-                                             "data/mea_lea_data_gaussian_sigma=0.001.bin",
-                                             show_time_title=True)
+        mea_lea_widget = FigureDiagramWidget(mea_lea_tile, self.show_height_map,"data/mea_lea_data_gaussian_sigma=0.001.bin",show_time_title=True)
         gc_widget = FigureDiagramWidget(gc_tile, self.show_height_map, "data/gc_data_gaussian_sigma=0.001.bin")
         bc_widget = FigureDiagramWidget(bc_tile, self.show_height_map, "data/bc_data_gaussian_sigma=0.001.bin")
 
@@ -83,7 +81,6 @@ class GuiCellPlot(QtGui.QMainWindow, threading.Thread):
             self.ui_widget.show()
         else:
             self.ui_widget.hide()
-
 
     def initUI(self):
         menubar = self.menuBar()
@@ -400,7 +397,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glBegin(gl.GL_POINTS)
         gl.glVertex2f(x, y)
         gl.glEnd()
-        gl.glPointSize(1)
+        gl.glPointSize(self.view.view()[4])
         gl.glPopMatrix()
         gl.glDisable(gl.GL_POINT_SMOOTH)
 
@@ -543,6 +540,9 @@ class GLUIWidget(UI, GLPlotWidget):
             if self.rubberband.box.dataDistance() > .1:
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
+                print("point size: ",  self.view.view()[4])
+                print("perimeter: ",  self.view.perimeter())
+                gl.glPointSize(self.view.view()[4])
             else:
                 QMessageBox.information(self, "ERROR", "Your view window is too small to compute.")
             self.kd_tree_active = False
@@ -552,6 +552,7 @@ class GLUIWidget(UI, GLPlotWidget):
             if not self.kd_tree_active:
                 print "Data is still being evaluated, please wait"
                 return
+            print "data_pos :" + str(self.find_data_pos())
             tree_num, pt_num, distance, x, y = self.find_data_pos()
             print "Focus Point Number= " + str(pt_num)
             print "Distance from Mouse= " + str(distance)
@@ -562,11 +563,13 @@ class GLUIWidget(UI, GLPlotWidget):
         if callback == Callbacks.CLICK:
             self.resetToOriginalView()
             self.parentWidget().repaint()
+            gl.glPointSize(self.view.view()[4])
         else:
             self.view.set_view(self.prevView)
             self.kd_tree_active = False
             self.repaint()
             self.parentWidget().repaint()
+            gl.glPointSize(self.view.view()[4])
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
@@ -578,6 +581,7 @@ class GLUIWidget(UI, GLPlotWidget):
             delta = distance / float(self.width)
             self.scaleOrtho(delta)
             self.parentWidget().repaint()
+            gl.glPointSize(self.view.view()[4])
 
         self.repaint()
         GLPlotWidget.mouseMoveEvent(self, event)

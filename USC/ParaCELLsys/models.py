@@ -3,7 +3,7 @@ import OpenGL.arrays.vbo as glvbo
 import os
 import cPickle
 import numpy as np
-import Image
+from PIL import Image
 import math
 
 __author__ = 'mavinm'
@@ -99,14 +99,18 @@ class ParseCellData():
 
         self.complete()
 
+
+
     def complete(self):
         """ Used after loading data is complete """
+        print "Loading Data is completed"
         pass
 
     def load_data(self):
         raise NotImplemented("This needs to be implemented and you should call self.save() afterwards for caching")
 
     def save(self):
+        print "ParaCellData.save"
         # Create directory 'tmp' if it does not exist
         dir = self.rendered_file.split('/')
         if not os.path.exists(dir[-2]):
@@ -167,11 +171,14 @@ class ParseParallelCellData(ParseCellData):
     rendered_file = "tmp/parallelData.bin"
 
     def load_data(self):
+        print "ParseParallelCellData.load_data"
         #dataDir = "MEA6600-LEA4600-GC100000-BASKET0-t10000topographic_no-b_AHP_sngl_10-02-2012neg"
         #dataDir = "{6600.4600.100000.1000}-t1500.recurInh_02.03.13-d"
         dataDir = os.path.dirname(os.path.realpath(__file__)) + "/data"
+        print dataDir
         imageName = dataDir + "/recurInh_i.png"
         fileName = dataDir + "/spikeTimes"
+        print fileName
 
         f = open(fileName, 'rb')  # using 'rb' for windows
         spikeData = cPickle.load(f)
@@ -182,6 +189,7 @@ class ParseParallelCellData(ParseCellData):
         combinedData = []
         combinedData = cPickle.load(f)
         f.close()
+
         places = combinedData[0]
         MEACenters = combinedData[2]
         LEACenters = combinedData[3]
@@ -238,6 +246,7 @@ class ParseParallelCellData(ParseCellData):
                             BC_pos.append(BCLocs[ii][1])
                             BC_xpos.append(BCLocs[ii][0])
                             self.add_spiketime_to_cell_hierarchy(ii, float(spikeData[ii][jj]), float(BCLocs[ii][1]))
+
 
         # Storing redundancy for convention with other data that might only have position in the 2nd data slot
         self.mea_data = np.array([MEA_t, MEA], dtype=np.float32).transpose()

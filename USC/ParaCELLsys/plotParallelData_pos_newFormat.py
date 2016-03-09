@@ -2,8 +2,8 @@ from PyQt4 import QtGui
 
 # My Parameters
 import sys
-from settings import *
-from models import *
+import models
+from settings import USE_CACHING
 from widget import GuiCellPlot, UIWidget
 from view import ViewTile
 
@@ -14,7 +14,7 @@ numCells = (6600, 4600, 100000, 1000)    # (number of MEA, number of LEA)
 tstart = 0
 tstop = 1500
 
-data = ParseParallelCellData(numCells, tstart, tstop, use_cache_data=USE_CACHING)
+data = models.ParseParallelCellData(numCells, tstart, tstop, use_cache_data=USE_CACHING)
 mea_data, lea_data, gc_data, bc_data = data.get_data()
 
 print str(mea_data.shape[0]) + " MEA spikes,"
@@ -22,13 +22,14 @@ print str(lea_data.shape[0]) + " LEA spikes,"
 print str(gc_data.shape[0]) + " Granule cell spikes, and"
 print str(bc_data.shape[0]) + " Basket cell spikes."
 
+# Create an PyQT4 application object.
 app = QtGui.QApplication(sys.argv)
 
 
-mea_set = CellTypeDataSet("Cell # \n(MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
-lea_set = CellTypeDataSet("\nLEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
-gc_set = CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
-bc_set = CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
+mea_set = models.CellTypeDataSet("Cell # \n(MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
+lea_set = models.CellTypeDataSet("\nLEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
+gc_set = models.CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
+bc_set = models.CellTypeDataSet("Basket Cells", bc_data, rgb=(.5, 0, .5))
 
 
 # These are the individual tiles that will have information about the dataset

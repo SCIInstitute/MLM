@@ -15,7 +15,7 @@ class plotSingleCellDetails:
         dir = "data"
         imageName = "./" + dir + "/VoltageTrace_GC.png"
         fileName = "./" + dir + "/spikeTimes"
-        cellVoltDataFile = "./" + dir + "/voltageTraces/granuleCells_CPU0.out"
+        cellVoltDataFile = "./" + dir + "/cellInfo"
 
         f = open(fileName, 'rb')
         spikeData = cPickle.load(f)
