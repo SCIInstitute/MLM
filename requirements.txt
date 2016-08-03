@@ -1,2 +1,4 @@
 image
 pyopengl
+numpy
+scipy
