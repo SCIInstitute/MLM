@@ -2,6 +2,7 @@ import threading
 import thread
 import time
 
+from PyQt4 import QtOpenGL
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget, QMessageBox
 from PyQt4 import QtCore
