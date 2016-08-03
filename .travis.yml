@@ -39,6 +39,7 @@ install:
     - popd
     # Builds Complete
     - popd
+    - sudo apt-get install python-qt4-gl
     - pip install -r requirements.txt
 
 # command to run tests
