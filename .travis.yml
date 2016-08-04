@@ -41,7 +41,7 @@ install:
     - popd
     - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
     - sudo apt-get install python-qt4-gl
-    - pip install -r requirements.txt
+    - travis_wait 30 pip install -r requirements.txt
 
 # command to run tests
 script: python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py
