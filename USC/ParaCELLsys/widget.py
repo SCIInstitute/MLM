@@ -1,6 +1,7 @@
 import threading
 import thread
 import time
+import os
 
 from PyQt4 import QtOpenGL
 from PyQt4 import QtGui
@@ -11,6 +12,7 @@ import OpenGL.GL as gl
 import OpenGL.GLU as glu
 import OpenGL.arrays.vbo as glvbo
 import numpy as np
+from os import path
 
 from kdtree import KDTreeWritable
 from models import rescale_data_to_image
@@ -350,11 +352,13 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         """
         # background color
         gl.glClearColor(1, 1, 1, 1)
-        if self.texture_file is not None:
+        if self.texture_file is not None and path.isfile(self.texture_file):
             self.initTexture()
+        else:
+            print "texture_file not found: ", self.texture_file
 
-        print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
-        print "Open GLSL Version: " + gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION)
+        #print "Open GL Version: " + gl.glGetString(gl.GL_VERSION)
+        #print "Open GLSL Version: " + gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION)
 
     def mouseMoveEvent(self, event):
         self.mouse_pos = event.pos()
@@ -486,7 +490,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         if self.y_ticks > 6:
             self.y_ticks = int(self.y_ticks / 1.5)
         self.setOrtho(self.view.view())
-        print "Resizing"
+        #print "Resizing"
         QGLWidget.resizeGL(self, width, height)
 
     def resetToOriginalView(self):
