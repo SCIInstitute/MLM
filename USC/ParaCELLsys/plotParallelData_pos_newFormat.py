@@ -1,4 +1,5 @@
-from PyQt4 import QtGui
+from PyQt4.QtCore import QTimer
+from PyQt4.QtGui import QApplication
 
 # My Parameters
 import sys
@@ -6,6 +7,8 @@ import models
 from settings import USE_CACHING
 from widget import GuiCellPlot, UIWidget
 from view import ViewTile
+
+isRegression = sys.argv[-1] == "--regression"
 
 my_marker_size = 2
 
@@ -23,7 +26,7 @@ print str(gc_data.shape[0]) + " Granule cell spikes, and"
 print str(bc_data.shape[0]) + " Basket cell spikes."
 
 # Create an PyQT4 application object.
-app = QtGui.QApplication(sys.argv)
+app = QApplication(sys.argv)
 
 
 mea_set = models.CellTypeDataSet("Cell # \n(MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
@@ -48,5 +51,11 @@ window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile, cell_hierarchy=data.cell_hi
 ui_widget = UIWidget(window)
 window.set_ui_heightmap_widget(ui_widget)
 window.show()
+
+#timer = QTimer()
+#timer.timeout.connect(app.quit)
+#if isRegression:
+#    print "Starting quit timer"
+#    timer.start(60000)
 
 sys.exit(app.exec_())
