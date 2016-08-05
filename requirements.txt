@@ -1,0 +1,5 @@
+image
+pyopengl
+numpy
+scipy
+enum
