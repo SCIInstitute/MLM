@@ -30,7 +30,6 @@ print str(bc_data.shape[0]) + " Basket cell spikes."
 # Create an PyQT4 application object.
 app = QApplication(sys.argv)
 
-
 mea_set = models.CellTypeDataSet("Cell # \n(MEA 0 - 6599, ", mea_data, rgb=(0, 0, .5))
 lea_set = models.CellTypeDataSet("\nLEA 660 - 11199)", lea_data, rgb=(.5, 0, 0))
 gc_set = models.CellTypeDataSet("GC Cell Septotemporal Position (mm)", gc_data, rgb=(0, .5, .5))
@@ -53,11 +52,5 @@ window = GuiCellPlot(mea_lea_tile, gc_tile, bc_tile, cell_hierarchy=data.cell_hi
 ui_widget = UIWidget(window)
 window.set_ui_heightmap_widget(ui_widget)
 window.show()
-
-#timer = QTimer()
-#timer.timeout.connect(app.quit)
-#if isRegression:
-#    print "Starting quit timer"
-#    timer.start(60000)
 
 sys.exit(app.exec_())
