@@ -1,5 +1,6 @@
 from PyQt4.QtCore import QTimer
 from PyQt4.QtGui import QApplication
+import signal
 
 # My Parameters
 import sys
@@ -8,6 +9,7 @@ from settings import USE_CACHING
 from widget import GuiCellPlot, UIWidget
 from view import ViewTile
 
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 isRegression = sys.argv[-1] == "--regression"
 
 my_marker_size = 2
