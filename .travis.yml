@@ -44,7 +44,9 @@ install:
     - travis_wait 30 pip install -r requirements.txt
 
 # command to run tests
-script: python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py --regression
+script:
+    - python ./USC/ParaCELLsys/computeCellGaussian.py
+    - python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py --regression
 
 notifications:
   slack: sciinstitute:pBg7vSh32XVc9V94MPkQSeGk
