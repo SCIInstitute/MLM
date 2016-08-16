@@ -273,7 +273,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             time.sleep(.25)
 
     def setAlpha(self):
-        print "Setting alpha"
+        print "Setting alpha--TODO"
 
     def event(self, QEvent):
         if QEvent.type() == QtCore.QEvent.Leave:
@@ -507,7 +507,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
             self.scale_y = float(self.view.height())
 
     def closeEvent(self, QCloseEvent):
-        print "closeEvent called for " + self.title
+        #print "closeEvent called for " + self.title
         self.program_active = False
 
         QGLWidget.closeEvent(self, QCloseEvent)
@@ -526,7 +526,7 @@ class GLUIWidget(UI, GLPlotWidget):
         GLPlotWidget.__init__(self, viewer, parent, texture_file)
 
     def mousePressEventLeft(self, event):
-        print "Mouse Down Event"
+        #print "Mouse Down Event"
         self.mouse_origin = convertMousePoint2DrawPlane(event.pos(), self.height)
         self.rubberband.setGeometry(
             QtCore.QRect(self.mouse_origin, QtCore.QSize()))
