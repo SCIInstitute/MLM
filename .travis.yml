@@ -45,7 +45,7 @@ install:
 
 # command to run tests
 script:
-    - python ./USC/ParaCELLsys/computeCellGaussian.py
+    #- python ./USC/ParaCELLsys/computeCellGaussian.py
     - python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py --regression
 
 notifications:
