@@ -402,7 +402,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glBegin(gl.GL_POINTS)
         gl.glVertex2f(x, y)
         gl.glEnd()
-        gl.glPointSize(self.view.view()[4])
+        gl.glPointSize(self.view.point_size())
         gl.glPopMatrix()
         gl.glDisable(gl.GL_POINT_SMOOTH)
 
@@ -413,6 +413,7 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
+            print "drawDataPoints of", dSet.getTitle(), dSet.count#, dSet.getDataSet()[0:10, 0:2]
             dSet.getColor(self.alpha)
             gl.glPushMatrix()
             dSet.getTranslation()
@@ -545,9 +546,9 @@ class GLUIWidget(UI, GLPlotWidget):
             if self.rubberband.box.dataDistance() > .1:
                 self.view.set_view(self.rubberband.box.unprojectView())
                 self.setOrtho(self.view.view())
-                print("point size: ",  self.view.view()[4])
-                print("perimeter: ",  self.view.perimeter())
-                gl.glPointSize(self.view.view()[4])
+                #print("point size: ",  self.view.point_size())
+                #print("perimeter: ",  self.view.perimeter())
+                gl.glPointSize(self.view.point_size())
             else:
                 QMessageBox.information(self, "ERROR", "Your view window is too small to compute.")
             self.kd_tree_active = False
@@ -557,7 +558,6 @@ class GLUIWidget(UI, GLPlotWidget):
             if not self.kd_tree_active:
                 print "Data is still being evaluated, please wait"
                 return
-            print "data_pos :" + str(self.find_data_pos())
             tree_num, pt_num, distance, x, y = self.find_data_pos()
             print "Focus Point Number= " + str(pt_num)
             print "Distance from Mouse= " + str(distance)
@@ -568,13 +568,13 @@ class GLUIWidget(UI, GLPlotWidget):
         if callback == Callbacks.CLICK:
             self.resetToOriginalView()
             self.parentWidget().repaint()
-            gl.glPointSize(self.view.view()[4])
+            gl.glPointSize(self.view.point_size())
         else:
             self.view.set_view(self.prevView)
             self.kd_tree_active = False
             self.repaint()
             self.parentWidget().repaint()
-            gl.glPointSize(self.view.view()[4])
+            gl.glPointSize(self.view.point_size())
 
     def mouseMoveEvent(self, event):
         if self.rubberband.isVisible():
@@ -586,7 +586,7 @@ class GLUIWidget(UI, GLPlotWidget):
             delta = distance / float(self.width)
             self.scaleOrtho(delta)
             self.parentWidget().repaint()
-            gl.glPointSize(self.view.view()[4])
+            gl.glPointSize(self.view.point_size())
 
         self.repaint()
         GLPlotWidget.mouseMoveEvent(self, event)
