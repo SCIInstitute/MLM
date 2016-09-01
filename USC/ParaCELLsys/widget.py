@@ -397,10 +397,19 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         tree_num, pt_num, distance, x, y = self.find_data_pos()
 
         self.data_sets[tree_num].getHighlightColor()
+
         gl.glPushMatrix()
         gl.glPointSize(10)
         gl.glBegin(gl.GL_POINTS)
+
+        gl.glColor3f(0.7, 0, 0)
+        positionThreshold = 6
+        for time in self.data_sets[tree_num].getAllTimesForPosition(round(y,positionThreshold)):
+            gl.glVertex2f(time, y)
+
+        gl.glColor3f(1, 0, 0)
         gl.glVertex2f(x, y)
+
         gl.glEnd()
         gl.glPointSize(self.view.point_size())
         gl.glPopMatrix()
@@ -413,7 +422,6 @@ class GLPlotWidget(QGLWidget, threading.Thread):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         for dSet in self.data_sets:
             # set blue color for subsequent drawing rendering calls
-            print "drawDataPoints of", dSet.getTitle(), dSet.count#, dSet.getDataSet()[0:10, 0:2]
             dSet.getColor(self.alpha)
             gl.glPushMatrix()
             dSet.getTranslation()

@@ -99,8 +99,6 @@ class ParseCellData():
 
         self.complete()
 
-
-
     def complete(self):
         """ Used after loading data is complete """
         print "Loading Data is completed"
@@ -170,6 +168,13 @@ class ParseCellData():
 class ParseParallelCellData(ParseCellData):
     rendered_file = "tmp/parallelData.bin"
 
+    def __init__(self, num_cells, t_start, t_stop, use_cache_data=False):
+        self.mea_data_timelookup = {}
+        self.lea_data_timelookup = {}
+        self.gc_data_timelookup = {}
+        self.bc_data_timelookup = {}
+        ParseCellData.__init__(self, num_cells, t_start, t_stop, use_cache_data)
+
     def load_data(self):
         print "ParseParallelCellData.load_data"
         #dataDir = "MEA6600-LEA4600-GC100000-BASKET0-t10000topographic_no-b_AHP_sngl_10-02-2012neg"
@@ -216,6 +221,7 @@ class ParseParallelCellData(ParseCellData):
                         if self.t_start <= spikeData[ii][jj] <= self.t_stop:
                             MEA.append(float(ii))
                             MEA_t.append(float(spikeData[ii][jj]))
+
                             # self.add_spiketime_to_cell_hierarchy(ii, float(ii), float(spikeData[ii][jj]))
             # Lateral Entorhinal Area
             elif self.num_cells[0] <= ii < sum(self.num_cells[0:2]):
@@ -224,6 +230,7 @@ class ParseParallelCellData(ParseCellData):
                         if self.t_start <= spikeData[ii][jj] <= self.t_stop:
                             LEA.append(ii)
                             LEA_t.append(spikeData[ii][jj])
+
                             # self.add_spiketime_to_cell_hierarchy(ii, float(ii), float(spikeData[ii][jj]))
             # Granule Cell
             elif self.num_cells[0] + self.num_cells[1] <= ii < sum(self.num_cells[0:3]):
@@ -232,6 +239,11 @@ class ParseParallelCellData(ParseCellData):
                         if self.t_start <= spikeData[ii][jj] <= self.t_stop:
                             GC.append(ii)
                             GC_t.append(spikeData[ii][jj])
+                            positionThreshold = 6
+                            if not self.gc_data_timelookup.has_key(round(places[ii][1], positionThreshold)):
+                                self.gc_data_timelookup[round(places[ii][1], positionThreshold)] = []
+                            self.gc_data_timelookup[round(places[ii][1], positionThreshold)].append(spikeData[ii][jj])
+
                             GC_pos.append(places[ii][1])
                             GC_xpos.append(places[ii][0])
                             # self.add_spiketime_to_cell_hierarchy(ii, float(spikeData[ii][jj]), float(places[ii][1]))
@@ -245,6 +257,13 @@ class ParseParallelCellData(ParseCellData):
                             BC_t.append(spikeData[ii][jj])
                             BC_pos.append(BCLocs[ii][1])
                             BC_xpos.append(BCLocs[ii][0])
+
+                            positionThreshold = 6
+
+                            if not self.bc_data_timelookup.has_key(round(BCLocs[ii][1], positionThreshold)):
+                                self.bc_data_timelookup[round(BCLocs[ii][1], positionThreshold)] = []
+                            self.bc_data_timelookup[round(BCLocs[ii][1], positionThreshold)].append(spikeData[ii][jj])
+
                             self.add_spiketime_to_cell_hierarchy(ii, float(spikeData[ii][jj]), float(BCLocs[ii][1]))
 
 
@@ -268,6 +287,10 @@ class ParseParallelCellData(ParseCellData):
 
         self.cell_hierarchy[cell_num].append([x_data, y_data])
 
+    def get_time_point_lookup_data(self):
+        return self.mea_data_timelookup, self.lea_data_timelookup, self.gc_data_timelookup, self.bc_data_timelookup
+
+
 
 class CellTypeDataSet():
     """
@@ -280,7 +303,7 @@ class CellTypeDataSet():
     xyz     : X, Y, Z Cartesian Coordinates for translating the points
     """
 
-    def __init__(self, title, data_set, rgb=(1, 1, 1), xyz=(0, 0, 0)):
+    def __init__(self, title, data_set, point_time_lookup, rgb=(1, 1, 1), xyz=(0, 0, 0)):
         # create a Vertex Buffer Object with the specified data
         self.vbo = glvbo.VBO(data_set[:, 0:2])
         self.count = data_set.shape[0]
@@ -288,9 +311,16 @@ class CellTypeDataSet():
         self.xyz = xyz
         self.data_set = data_set
         self.title = title
+        self.point_time_lookup = point_time_lookup
 
     def setTranslation(self, x, y, z):
         self.xyz = (x, y, z)
+
+    def getAllTimesForPosition(self, x):
+        if self.point_time_lookup.has_key(x):
+            return self.point_time_lookup[x]
+        else:
+            return []
 
     def getTitle(self):
         return self.title
