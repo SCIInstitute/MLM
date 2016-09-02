@@ -9,6 +9,7 @@ import pycuda.driver as cuda
 from convertGaussian2Image import *
 from models import getFilteredDataSet, CellTypeDataSet
 from view import ViewTile
+from PIL import Image
 
 
 __author__ = 'mavinm'

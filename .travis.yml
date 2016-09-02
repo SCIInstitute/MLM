@@ -1,10 +1,6 @@
 language: python
 python:
   - "2.7"
-#  - "3.2"
-#  - "3.3"
-#  - "3.4"
-#  - "3.5"
 
 before_install:
     - sudo mkdir -p /downloads
@@ -20,7 +16,6 @@ install:
     - sh -e /etc/init.d/xvfb start
     - sudo apt-get install -y libqt4-dev
     - sudo apt-get install -y mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev
-#    - sudo apt-get install -y python3-sip python3-sip-dev python3-pyqt4 cmake
     # Qt4
     - pushd /builds
     # SIP
@@ -44,7 +39,8 @@ install:
     - travis_wait 30 pip install -r requirements.txt
 
 # command to run tests
-script: python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py --regression
+script:
+    - python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py --regression
 
 notifications:
   slack: sciinstitute:pBg7vSh32XVc9V94MPkQSeGk

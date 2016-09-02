@@ -43,13 +43,13 @@ class ToolQB():
                               curr_xy[1] - prev_xy[1])
 
             if dist < 2:
-                print "Treat as a click"
+                #print "Treat as a click"
                 callback = Callbacks.CLICK
             elif abs(curr_xy[0] - prev_xy[0]) < 2 or abs(curr_xy[1] - prev_xy[1]) < 2:
                 QMessageBox.about(parent, "ERROR", "Your view window is too small to compute.")
                 callback = Callbacks.RESET
             else:
-                print "Zoom in"
+                #print "Zoom in"
                 callback = Callbacks.RESIZE
             self.prev_position_rect = None
 
@@ -75,17 +75,17 @@ class ToolQB():
             current_position = mouse.pos()
             return current_position.x() - self.prev_position_scale.x()
         else:
-            print "Mouse scaling released"
+            #print "Mouse scaling released"
             current_position = mouse.pos()
             prev_xy = (self.prev_position_scale.x(), self.prev_position_scale.y())
             curr_xy = (current_position.x(), current_position.y())
             dist = math.hypot(curr_xy[0] - prev_xy[0],
                               curr_xy[1] - prev_xy[1])
             if dist < 2:
-                print "Treat as a click"
+                #print "Treat as a click"
                 callback = Callbacks.CLICK
             else:
-                print "Zoom in"
+                #print "Zoom in"
                 callback = Callbacks.RESIZE
 
             self.prev_position_scale = None
