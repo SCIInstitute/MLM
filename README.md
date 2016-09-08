@@ -2,6 +2,8 @@
 
 ## ParaCELLsys: Interactive Tool for Hippocampus Model
 
+[![Build Status](https://travis-ci.org/SCIInstitute/MLM.svg?branch=master)](https://travis-ci.org/SCIInstitute/MLM)
+
 ### Requirements
 1. Python 2.7 (https://www.python.org/download/releases/2.7/)
 2. Numpy (http://www.numpy.org/)
