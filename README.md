@@ -12,6 +12,7 @@
 7. PyQt4 (https://wiki.python.org/moin/PyQt4) [Including libraries QtCore, QtGui, and QtOpenGL]
 8. Enum (https://pypi.python.org/pypi/enum34)
 9. PyOpenGL (http://pyopengl.sourceforge.net/)
+10. Optional: PyCUDA (https://documen.tician.de/pycuda/)
 
 ### Running the application
 `python ./USC/ParaCELLsys/plotParallelData_pos_newFormat.py`
